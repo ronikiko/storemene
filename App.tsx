@@ -150,39 +150,7 @@ const App: React.FC = () => {
   const handleEditPriceList = (pl: PriceList) => setPriceLists(prev => prev.map(x => x.id === pl.id ? pl : x));
   const handleDeletePriceList = (id: string) => setPriceLists(prev => prev.filter(x => x.id !== id));
 
-  // --- View Rendering ---
-
-  if (currentView === 'login') return <AdminLogin onLogin={handleLogin} onBack={() => setCurrentView('home')} />;
-
-  if (currentView === 'admin') {
-    if (!isAdminAuthenticated) { setCurrentView('login'); return null; }
-    return (
-      <AdminDashboard
-        products={products} categories={categories} customers={customers} priceLists={priceLists}
-        onAddProduct={handleAddProduct} onEditProduct={handleEditProduct} onDeleteProduct={handleDeleteProduct}
-        onAddCategory={handleAddCategory} onEditCategory={handleEditCategory} onDeleteCategory={handleDeleteCategory}
-        onAddCustomer={handleAddCustomer} onEditCustomer={handleEditCustomer} onDeleteCustomer={handleDeleteCustomer}
-        onAddPriceList={handleAddPriceList} onEditPriceList={handleEditPriceList} onDeletePriceList={handleDeletePriceList}
-        onLogout={() => { setIsAdminAuthenticated(false); setCurrentView('home'); }}
-        onGoHome={() => setCurrentView('home')}
-      />
-    );
-  }
-
-  if (currentView === 'checkout') {
-    return (
-      <div className="min-h-screen bg-white font-sans">
-        <Header
-          cartCount={cartCount}
-          onCartClick={() => setCurrentView('checkout')}
-          onLogoClick={() => setCurrentView('home')}
-          onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
-        />
-        <CartPage cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={() => setCurrentView('home')} />
-      </div>
-    );
-  }
-
+  // --- Filtering & Sorting ---
   const filteredProducts = products.filter(product => {
     // 1. Category
     if (selectedCategory && selectedCategory !== 'new' && product.category !== selectedCategory) return false;
@@ -216,148 +184,202 @@ const App: React.FC = () => {
     }
   });
 
-  return (
-    <ToastProvider>
-      <div className="min-h-screen pb-20 bg-coffee-50 font-sans selection:bg-coffee-200">
-        <Header
-          cartCount={cartCount}
-          onCartClick={() => setCurrentView('checkout')}
-          onLogoClick={() => setCurrentView('home')}
-          onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
-        />
+  // --- Quick View Navigation ---
+  const handleNextProduct = () => {
+    if (!quickViewProduct) return;
+    const currentIndex = filteredProducts.findIndex(p => p.id === quickViewProduct.id);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % filteredProducts.length;
+    setQuickViewProduct(filteredProducts[ nextIndex ]);
+  };
 
-        <div className="container mx-auto px-4 mt-6 mb-8">
-          <CategoryNav
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={(id) => { setSelectedCategory(id); setCurrentPage(1); }}
+  const handlePrevProduct = () => {
+    if (!quickViewProduct) return;
+    const currentIndex = filteredProducts.findIndex(p => p.id === quickViewProduct.id);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + filteredProducts.length) % filteredProducts.length;
+    setQuickViewProduct(filteredProducts[ prevIndex ]);
+  };
+
+  // --- View Rendering Helpers ---
+  const renderLogin = () => <AdminLogin onLogin={handleLogin} onBack={() => setCurrentView('home')} />;
+
+  const renderAdmin = () => {
+    if (!isAdminAuthenticated) return renderLogin();
+    return (
+      <AdminDashboard
+        products={products} categories={categories} customers={customers} priceLists={priceLists}
+        onAddProduct={handleAddProduct} onEditProduct={handleEditProduct} onDeleteProduct={handleDeleteProduct}
+        onAddCategory={handleAddCategory} onEditCategory={handleEditCategory} onDeleteCategory={handleDeleteCategory}
+        onAddCustomer={handleAddCustomer} onEditCustomer={handleEditCustomer} onDeleteCustomer={handleDeleteCustomer}
+        onAddPriceList={handleAddPriceList} onEditPriceList={handleEditPriceList} onDeletePriceList={handleDeletePriceList}
+        onLogout={() => { setIsAdminAuthenticated(false); setCurrentView('home'); }}
+        onGoHome={() => setCurrentView('home')}
+      />
+    );
+  };
+
+  const renderCheckout = () => (
+    <div className="min-h-screen bg-white font-sans">
+      <Header
+        cartCount={cartCount}
+        onCartClick={() => setCurrentView('checkout')}
+        onLogoClick={() => setCurrentView('home')}
+        onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
+      />
+      <CartPage cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={() => setCurrentView('home')} />
+    </div>
+  );
+
+  const renderHome = () => (
+    <div className="min-h-screen pb-20 bg-coffee-50 font-sans selection:bg-coffee-200">
+      <Header
+        cartCount={cartCount}
+        onCartClick={() => setCurrentView('checkout')}
+        onLogoClick={() => setCurrentView('home')}
+        onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
+      />
+
+      <div className="container mx-auto px-4 mt-6 mb-8">
+        <CategoryNav
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(id) => { setSelectedCategory(id); setCurrentPage(1); }}
+        />
+      </div>
+
+      <div className="container mx-auto px-4 py-8 flex gap-8">
+
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block">
+          <Sidebar
+            selectedPriceRange={selectedPriceRange}
+            onPriceRangeChange={setSelectedPriceRange}
+            showOnlyNew={showOnlyNew}
+            onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
+            showOnlySale={showOnlySale}
+            onToggleSale={() => setShowOnlySale(!showOnlySale)}
           />
         </div>
 
-        <div className="container mx-auto px-4 py-8 flex gap-8">
+        {/* Mobile Sidebar Drawer */}
+        {isMobileSidebarOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)} />
+            <div className="relative bg-white w-4/5 max-w-xs h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-coffee-900">סינון</h2>
+                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 text-coffee-500">
+                  <span className="sr-only">סגור</span>
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <Sidebar
+                selectedPriceRange={selectedPriceRange}
+                onPriceRangeChange={setSelectedPriceRange}
+                showOnlyNew={showOnlyNew}
+                onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
+                showOnlySale={showOnlySale}
+                onToggleSale={() => setShowOnlySale(!showOnlySale)}
+              />
+            </div>
+          </div>
+        )}
 
-          {/* Desktop Sidebar */}
-          <div className="hidden md:block">
-            <Sidebar
-              selectedPriceRange={selectedPriceRange}
-              onPriceRangeChange={setSelectedPriceRange}
-              showOnlyNew={showOnlyNew}
-              onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
-              showOnlySale={showOnlySale}
-              onToggleSale={() => setShowOnlySale(!showOnlySale)}
-            />
+        {/* Main Content */}
+        <main className="flex-1 min-h-[600px]">
+          {/* Top Toolbar */}
+          <div className="bg-white p-4 rounded-xl border border-coffee-100 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+              <button
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="md:hidden flex items-center gap-2 text-coffee-900 font-bold"
+              >
+                <Filter className="w-5 h-5" />
+                <span>סינון</span>
+              </button>
+              <span className="text-sm text-coffee-500 font-medium hidden md:block">
+                {filteredProducts.length} מוצרים
+              </span>
+            </div>
+            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-coffee-700 hidden md:inline">מיון:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-coffee-50 border-none rounded-lg text-sm py-2 pl-8 pr-4 text-coffee-900 font-medium focus:ring-1 focus:ring-coffee-200"
+                >
+                  <option value="default">מומלץ</option>
+                  <option value="price-asc">מחיר: נמוך לגבוה</option>
+                  <option value="price-desc">מחיר: גבוה לנמוך</option>
+                  <option value="name-asc">שם: א-ת</option>
+                </select>
+              </div>
+              <div className="flex bg-coffee-50 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Mobile Sidebar Drawer */}
-          {isMobileSidebarOpen && (
-            <div className="fixed inset-0 z-50 flex md:hidden">
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)} />
-              <div className="relative bg-white w-4/5 max-w-xs h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-coffee-900">סינון</h2>
-                  <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 text-coffee-500">
-                    <span className="sr-only">סגור</span>
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+          {filteredProducts.length > 0 ? (
+            <>
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={getEffectiveProductInfo(product)}
+                      onAddToCart={handleAddToCart}
+                      onQuickView={setQuickViewProduct}
+                    />
+                  ))}
                 </div>
-                <Sidebar
-                  selectedPriceRange={selectedPriceRange}
-                  onPriceRangeChange={setSelectedPriceRange}
-                  showOnlyNew={showOnlyNew}
-                  onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
-                  showOnlySale={showOnlySale}
-                  onToggleSale={() => setShowOnlySale(!showOnlySale)}
+              ) : (
+                <ProductTable
+                  products={filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(p => getEffectiveProductInfo(p))}
+                  onAddToCart={handleAddToCart}
+                  onQuickView={setQuickViewProduct}
                 />
-              </div>
+              )}
+
+              {filteredProducts.length > itemsPerPage && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(filteredProducts.length / itemsPerPage)}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-coffee-400 bg-white rounded-2xl border border-coffee-50">
+              <AlertCircle className="w-16 h-16 mb-6 opacity-50" />
+              <p className="text-xl font-bold text-coffee-800">לא נמצאו מוצרים.</p>
+              <button onClick={handleClearFilters} className="mt-6 text-coffee-600 font-bold underline hover:text-coffee-900 hover:no-underline">נקה סינונים</button>
             </div>
           )}
-
-          {/* Main Content */}
-          <main className="flex-1 min-h-[600px]">
-            {/* Top Toolbar */}
-            <div className="bg-white p-4 rounded-xl border border-coffee-100 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-                <button
-                  onClick={() => setIsMobileSidebarOpen(true)}
-                  className="md:hidden flex items-center gap-2 text-coffee-900 font-bold"
-                >
-                  <Filter className="w-5 h-5" />
-                  <span>סינון</span>
-                </button>
-                <span className="text-sm text-coffee-500 font-medium hidden md:block">
-                  {filteredProducts.length} מוצרים
-                </span>
-              </div>
-              <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-coffee-700 hidden md:inline">מיון:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-coffee-50 border-none rounded-lg text-sm py-2 pl-8 pr-4 text-coffee-900 font-medium focus:ring-1 focus:ring-coffee-200"
-                  >
-                    <option value="default">מומלץ</option>
-                    <option value="price-asc">מחיר: נמוך לגבוה</option>
-                    <option value="price-desc">מחיר: גבוה לנמוך</option>
-                    <option value="name-asc">שם: א-ת</option>
-                  </select>
-                </div>
-                <div className="flex bg-coffee-50 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('table')}
-                    className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {filteredProducts.length > 0 ? (
-              <>
-                {viewMode === 'grid' ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={getEffectiveProductInfo(product)}
-                        onAddToCart={handleAddToCart}
-                        onQuickView={setQuickViewProduct}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <ProductTable
-                    products={filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(p => getEffectiveProductInfo(p))}
-                    onAddToCart={handleAddToCart}
-                    onQuickView={setQuickViewProduct}
-                  />
-                )}
-
-                {filteredProducts.length > itemsPerPage && (
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={Math.ceil(filteredProducts.length / itemsPerPage)}
-                    onPageChange={setCurrentPage}
-                  />
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-coffee-400 bg-white rounded-2xl border border-coffee-50">
-                <AlertCircle className="w-16 h-16 mb-6 opacity-50" />
-                <p className="text-xl font-bold text-coffee-800">לא נמצאו מוצרים.</p>
-                <button onClick={handleClearFilters} className="mt-6 text-coffee-600 font-bold underline hover:text-coffee-900 hover:no-underline">נקה סינונים</button>
-              </div>
-            )}
-          </main>
-        </div>
+        </main>
       </div>
+    </div>
+  );
+
+  return (
+    <ToastProvider>
+      {currentView === 'login' && renderLogin()}
+      {currentView === 'admin' && renderAdmin()}
+      {currentView === 'checkout' && renderCheckout()}
+      {currentView === 'home' && renderHome()}
 
       {/* Simulation Bar (Active Customer Indicator) */}
       {activeCustomerId && (() => {
@@ -376,17 +398,17 @@ const App: React.FC = () => {
         );
       })()}
 
-
       {quickViewProduct && (
         <QuickViewModal
           product={getEffectiveProductInfo(quickViewProduct)}
           isOpen={!!quickViewProduct}
           onClose={() => setQuickViewProduct(null)}
           onAddToCart={handleAddToCart}
+          onNext={handleNextProduct}
+          onPrev={handlePrevProduct}
         />
       )}
-
-    </ToastProvider >
+    </ToastProvider>
   );
 };
 

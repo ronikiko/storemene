@@ -9,6 +9,7 @@ interface AdminLoginProps {
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
+  const [ email, setEmail ] = useState('');
   const [ password, setPassword ] = useState('');
   const { error: toastError } = useToast(); // Renamed to avoid conflict with removed local 'error' state
 
@@ -58,11 +59,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
             />
           </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center font-medium">
-              {error}
-            </div>
-          )}
+
 
           <button
             type="submit"
