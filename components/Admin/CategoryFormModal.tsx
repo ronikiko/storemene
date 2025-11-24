@@ -41,14 +41,18 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({ isOpen, categoryT
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Simple validation
     if (!formData.id || !formData.name) return;
 
-    onSave(formData);
-    onClose();
+    try {
+      await onSave(formData);
+      onClose();
+    } catch (error) {
+      console.error('Failed to save category:', error);
+    }
   };
 
   return (
@@ -102,8 +106,8 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({ isOpen, categoryT
                     type="button"
                     onClick={() => setFormData({ ...formData, icon: iconItem.id })}
                     className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${isSelected
-                        ? 'border-black bg-black text-white shadow-md scale-105'
-                        : 'border-gray-100 hover:border-gray-300 text-gray-600 hover:bg-gray-50'
+                      ? 'border-black bg-black text-white shadow-md scale-105'
+                      : 'border-gray-100 hover:border-gray-300 text-gray-600 hover:bg-gray-50'
                       }`}
                   >
                     <Icon className="w-6 h-6 mb-1" />

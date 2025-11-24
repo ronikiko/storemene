@@ -1,0 +1,21 @@
+{
+  "name": "styleflow-backend",
+  "version": "1.0.0",
+  "description": "Backend server for StyleFlow IL with SQLite database",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/seed.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "dotenv": "^16.4.5"
+  }
+}

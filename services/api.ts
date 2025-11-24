@@ -1,0 +1,99 @@
+const API_BASE_URL = 'http://localhost:3001/api';
+
+// Helper function for API calls
+async function apiCall(endpoint: string, options: RequestInit = {}) {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+        ...options,
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(error.error || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+}
+
+// Products API
+export const productsApi = {
+    getAll: () => apiCall('/products'),
+    getById: (id: number) => apiCall(`/products/${id}`),
+    create: (product: any) => apiCall('/products', {
+        method: 'POST',
+        body: JSON.stringify(product),
+    }),
+    update: (id: number, product: any) => apiCall(`/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(product),
+    }),
+    delete: (id: number) => apiCall(`/products/${id}`, {
+        method: 'DELETE',
+    }),
+};
+
+// Categories API
+export const categoriesApi = {
+    getAll: () => apiCall('/categories'),
+    getById: (id: string) => apiCall(`/categories/${id}`),
+    create: (category: any) => apiCall('/categories', {
+        method: 'POST',
+        body: JSON.stringify(category),
+    }),
+    update: (id: string, category: any) => apiCall(`/categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(category),
+    }),
+    delete: (id: string) => apiCall(`/categories/${id}`, {
+        method: 'DELETE',
+    }),
+};
+
+// Customers API
+export const customersApi = {
+    getAll: () => apiCall('/customers'),
+    getById: (id: string) => apiCall(`/customers/${id}`),
+    create: (customer: any) => apiCall('/customers', {
+        method: 'POST',
+        body: JSON.stringify(customer),
+    }),
+    update: (id: string, customer: any) => apiCall(`/customers/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(customer),
+    }),
+    delete: (id: string) => apiCall(`/customers/${id}`, {
+        method: 'DELETE',
+    }),
+};
+
+// Price Lists API
+export const priceListsApi = {
+    getAll: () => apiCall('/price-lists'),
+    getById: (id: string) => apiCall(`/price-lists/${id}`),
+    create: (priceList: any) => apiCall('/price-lists', {
+        method: 'POST',
+        body: JSON.stringify(priceList),
+    }),
+    update: (id: string, priceList: any) => apiCall(`/price-lists/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(priceList),
+    }),
+    delete: (id: string) => apiCall(`/price-lists/${id}`, {
+        method: 'DELETE',
+    }),
+};
+
+// Auth API
+export const authApi = {
+    authenticateCustomer: (token: string) => apiCall('/auth/customer', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+    }),
+    authenticateAdmin: (password: string) => apiCall('/auth/admin', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+    }),
+};

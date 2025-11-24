@@ -6,13 +6,13 @@ import { useToast } from '../../context/ToastContext';
 interface CustomerFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (customer: Customer) => void;
+  onSave: (customer: Customer) => void;
   customerToEdit?: Customer | null;
   priceLists: PriceList[];
 }
 
-const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, onSubmit, customerToEdit, priceLists }) => {
-  const { error } = useToast();
+const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, onSave, customerToEdit, priceLists }) => {
+  const { error: toastError } = useToast();
   const [ formData, setFormData ] = useState<Omit<Customer, 'id'>>({
     name: '',
     email: '',
@@ -43,10 +43,11 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, 
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!formData.name) {
-      error('נא למלא שם לקוח');
+      toastError('נא למלא שם לקוח');
       return;
     }
 
@@ -56,8 +57,12 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, 
       token: formData.token || Math.random().toString(36).substring(2, 15)
     };
 
-    onSubmit(payload);
-    onClose();
+    try {
+      await onSave(payload);
+      onClose();
+    } catch (error) {
+      toastError('שגיאה בשמירת הלקוח');
+    }
   };
 
   return (

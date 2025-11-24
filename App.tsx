@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import CategoryNav from './components/CategoryNav';
@@ -9,17 +9,21 @@ import AdminLogin from './components/Admin/AdminLogin';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import ProductTable from './components/ProductTable';
 import Pagination from './components/Pagination';
-import { ToastProvider } from './context/ToastContext';
-import { PRODUCTS as INITIAL_PRODUCTS, CATEGORIES as INITIAL_CATEGORIES, CUSTOMERS as INITIAL_CUSTOMERS, PRICE_LISTS as INITIAL_PRICE_LISTS } from './constants';
+import { ToastProvider, useToast } from './context/ToastContext';
 import { Product, CartItem, Category, Customer, PriceList } from './types';
 import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter } from 'lucide-react';
+import { productsApi, categoriesApi, customersApi, priceListsApi, authApi } from './services/api';
 
 const App: React.FC = () => {
-  // --- Data State (Backend Simulation) ---
-  const [ products, setProducts ] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [ categories, setCategories ] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [ customers, setCustomers ] = useState<Customer[]>(INITIAL_CUSTOMERS);
-  const [ priceLists, setPriceLists ] = useState<PriceList[]>(INITIAL_PRICE_LISTS);
+  // --- Data State (From Backend) ---
+  const [ products, setProducts ] = useState<Product[]>([]);
+  const [ categories, setCategories ] = useState<Category[]>([]);
+  const [ customers, setCustomers ] = useState<Customer[]>([]);
+  const [ priceLists, setPriceLists ] = useState<PriceList[]>([]);
+
+  // --- Loading & Error States ---
+  const [ isLoading, setIsLoading ] = useState(true);
+  const [ error, setError ] = useState<string | null>(null);
 
   // --- View State ---
   const [ currentView, setCurrentView ] = useState<'home' | 'checkout' | 'login' | 'admin'>('home');
@@ -70,11 +74,39 @@ const App: React.FC = () => {
   const [ showOnlyNew, setShowOnlyNew ] = useState(false);
   const [ showOnlySale, setShowOnlySale ] = useState(false);
 
-  // --- URL Simulation Logic ---
-  React.useEffect(() => {
+  // --- Fetch Data from Backend ---
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [ productsData, categoriesData, customersData, priceListsData ] = await Promise.all([
+          productsApi.getAll(),
+          categoriesApi.getAll(),
+          customersApi.getAll(),
+          priceListsApi.getAll(),
+        ]);
+
+        setProducts(productsData);
+        setCategories(categoriesData);
+        setCustomers(customersData);
+        setPriceLists(priceListsData);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        console.error('Failed to fetch data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // --- URL Customer Token Logic ---
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('token');
-    if (tokenParam) {
+    if (tokenParam && customers.length > 0) {
       const customerExists = customers.find(c => c.token === tokenParam);
       if (customerExists) {
         setActiveCustomerId(customerExists.id);
@@ -127,28 +159,133 @@ const App: React.FC = () => {
     setIsFilterOpen(false);
   };
 
-  // --- CRUD Handlers ---
+  // --- CRUD Handlers (with API calls) ---
   const handleLogin = () => { setIsAdminAuthenticated(true); setCurrentView('admin'); };
 
   // Products
-  const handleAddProduct = (p: Product) => setProducts(prev => [ p, ...prev ]);
-  const handleEditProduct = (p: Product) => setProducts(prev => prev.map(x => x.id === p.id ? p : x));
-  const handleDeleteProduct = (id: number) => { setProducts(prev => prev.filter(x => x.id !== id)); handleRemoveFromCart(id); };
+  const handleAddProduct = async (p: Product) => {
+    try {
+      const newProduct = await productsApi.create(p);
+      setProducts(prev => [ newProduct, ...prev ]);
+    } catch (err) {
+      console.error('Failed to add product:', err);
+      throw err;
+    }
+  };
+
+  const handleEditProduct = async (p: Product) => {
+    try {
+      const updatedProduct = await productsApi.update(p.id, p);
+      setProducts(prev => prev.map(x => x.id === p.id ? updatedProduct : x));
+    } catch (err) {
+      console.error('Failed to update product:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      await productsApi.delete(id);
+      setProducts(prev => prev.filter(x => x.id !== id));
+      handleRemoveFromCart(id);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      throw err;
+    }
+  };
 
   // Categories
-  const handleAddCategory = (c: Category) => setCategories(prev => [ ...prev, c ]);
-  const handleEditCategory = (c: Category) => setCategories(prev => prev.map(x => x.id === c.id ? c : x));
-  const handleDeleteCategory = (id: string) => setCategories(prev => prev.filter(x => x.id !== id));
+  const handleAddCategory = async (c: Category) => {
+    try {
+      const newCategory = await categoriesApi.create(c);
+      setCategories(prev => [ ...prev, newCategory ]);
+    } catch (err) {
+      console.error('Failed to add category:', err);
+      throw err;
+    }
+  };
+
+  const handleEditCategory = async (c: Category) => {
+    try {
+      const updatedCategory = await categoriesApi.update(c.id, c);
+      setCategories(prev => prev.map(x => x.id === c.id ? updatedCategory : x));
+    } catch (err) {
+      console.error('Failed to update category:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      await categoriesApi.delete(id);
+      setCategories(prev => prev.filter(x => x.id !== id));
+    } catch (err) {
+      console.error('Failed to delete category:', err);
+      throw err;
+    }
+  };
 
   // Customers
-  const handleAddCustomer = (c: Customer) => setCustomers(prev => [ ...prev, c ]);
-  const handleEditCustomer = (c: Customer) => setCustomers(prev => prev.map(x => x.id === c.id ? c : x));
-  const handleDeleteCustomer = (id: string) => setCustomers(prev => prev.filter(x => x.id !== id));
+  const handleAddCustomer = async (c: Customer) => {
+    try {
+      const newCustomer = await customersApi.create(c);
+      setCustomers(prev => [ ...prev, newCustomer ]);
+    } catch (err) {
+      console.error('Failed to add customer:', err);
+      throw err;
+    }
+  };
+
+  const handleEditCustomer = async (c: Customer) => {
+    try {
+      const updatedCustomer = await customersApi.update(c.id, c);
+      setCustomers(prev => prev.map(x => x.id === c.id ? updatedCustomer : x));
+    } catch (err) {
+      console.error('Failed to update customer:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteCustomer = async (id: string) => {
+    try {
+      await customersApi.delete(id);
+      setCustomers(prev => prev.filter(x => x.id !== id));
+    } catch (err) {
+      console.error('Failed to delete customer:', err);
+      throw err;
+    }
+  };
 
   // Price Lists
-  const handleAddPriceList = (pl: PriceList) => setPriceLists(prev => [ ...prev, pl ]);
-  const handleEditPriceList = (pl: PriceList) => setPriceLists(prev => prev.map(x => x.id === pl.id ? pl : x));
-  const handleDeletePriceList = (id: string) => setPriceLists(prev => prev.filter(x => x.id !== id));
+  const handleAddPriceList = async (pl: PriceList) => {
+    try {
+      const newPriceList = await priceListsApi.create(pl);
+      setPriceLists(prev => [ ...prev, newPriceList ]);
+    } catch (err) {
+      console.error('Failed to add price list:', err);
+      throw err;
+    }
+  };
+
+  const handleEditPriceList = async (pl: PriceList) => {
+    try {
+      const updatedPriceList = await priceListsApi.update(pl.id, pl);
+      setPriceLists(prev => prev.map(x => x.id === pl.id ? updatedPriceList : x));
+    } catch (err) {
+      console.error('Failed to update price list:', err);
+      throw err;
+    }
+  };
+
+  const handleDeletePriceList = async (id: string) => {
+    try {
+      await priceListsApi.delete(id);
+      setPriceLists(prev => prev.filter(x => x.id !== id));
+    } catch (err) {
+      console.error('Failed to delete price list:', err);
+      throw err;
+    }
+  };
 
   // --- Filtering & Sorting ---
   const filteredProducts = products.filter(product => {
@@ -376,37 +513,72 @@ const App: React.FC = () => {
 
   return (
     <ToastProvider>
-      {currentView === 'login' && renderLogin()}
-      {currentView === 'admin' && renderAdmin()}
-      {currentView === 'checkout' && renderCheckout()}
-      {currentView === 'home' && renderHome()}
-
-      {/* Simulation Bar (Active Customer Indicator) */}
-      {activeCustomerId && (() => {
-        const activeCustomer = customers.find(c => c.id === activeCustomerId);
-        const activePriceList = activeCustomer?.priceListId ? priceLists.find(pl => pl.id === activeCustomer.priceListId) : null;
-
-        return (
-          <div className="fixed bottom-16 md:bottom-4 left-4 z-50 bg-coffee-900/95 backdrop-blur text-white px-5 py-3 rounded-full shadow-xl text-xs flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 border border-white/10">
-            <Users className="w-4 h-4 text-green-400" />
-            <span className="opacity-75 font-medium">צפה כלקוח:</span>
-            <span className="font-bold text-white text-sm">
-              {activeCustomer?.name}
-              {activePriceList && <span className="text-green-400 ml-1">({activePriceList.name})</span>}
-            </span>
+      {/* Loading State */}
+      {isLoading && (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-coffee-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-coffee-900 font-bold">טוען נתונים...</p>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
-      {quickViewProduct && (
-        <QuickViewModal
-          product={getEffectiveProductInfo(quickViewProduct)}
-          isOpen={!!quickViewProduct}
-          onClose={() => setQuickViewProduct(null)}
-          onAddToCart={handleAddToCart}
-          onNext={handleNextProduct}
-          onPrev={handlePrevProduct}
-        />
+      {/* Error State */}
+      {!isLoading && error && (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="text-center max-w-md">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">שגיאה בטעינת הנתונים</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-sm text-gray-500 mb-4">
+              ודא שהשרת פועל על http://localhost:3001
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-coffee-900 text-white px-6 py-3 rounded-lg font-bold hover:bg-coffee-800"
+            >
+              נסה שוב
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && !error && (
+        <>
+          {currentView === 'login' && renderLogin()}
+          {currentView === 'admin' && renderAdmin()}
+          {currentView === 'checkout' && renderCheckout()}
+          {currentView === 'home' && renderHome()}
+
+          {/* Simulation Bar (Active Customer Indicator) */}
+          {activeCustomerId && (() => {
+            const activeCustomer = customers.find(c => c.id === activeCustomerId);
+            const activePriceList = activeCustomer?.priceListId ? priceLists.find(pl => pl.id === activeCustomer.priceListId) : null;
+
+            return (
+              <div className="fixed bottom-16 md:bottom-4 left-4 z-50 bg-coffee-900/95 backdrop-blur text-white px-5 py-3 rounded-full shadow-xl text-xs flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 border border-white/10">
+                <Users className="w-4 h-4 text-green-400" />
+                <span className="opacity-75 font-medium">צפה כלקוח:</span>
+                <span className="font-bold text-white text-sm">
+                  {activeCustomer?.name}
+                  {activePriceList && <span className="text-green-400 ml-1">({activePriceList.name})</span>}
+                </span>
+              </div>
+            );
+          })()}
+
+          {quickViewProduct && (
+            <QuickViewModal
+              product={getEffectiveProductInfo(quickViewProduct)}
+              isOpen={!!quickViewProduct}
+              onClose={() => setQuickViewProduct(null)}
+              onAddToCart={handleAddToCart}
+              onNext={handleNextProduct}
+              onPrev={handlePrevProduct}
+            />
+          )}
+        </>
       )}
     </ToastProvider>
   );
