@@ -232,7 +232,7 @@ const App: React.FC = () => {
   );
 
   const renderHome = () => (
-    <div className="min-h-screen pb-20 bg-coffee-50 font-sans selection:bg-coffee-200">
+    <div className="min-h-screen pb-20 bg-gray-50 font-sans selection:bg-gray-200">
       <Header
         cartCount={cartCount}
         onCartClick={() => setCurrentView('checkout')}
