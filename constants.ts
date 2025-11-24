@@ -1,13 +1,13 @@
 import { Product, Category, Customer, PriceList } from './types';
 
 export const CATEGORIES: Category[] = [
-  { id: 'new', name: 'מבצעים חמים', image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=150&q=80' },
-  { id: 'drinks', name: 'משקאות', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=150&q=80' },
-  { id: 'fruits_veg', name: 'פירות וירקות', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=150&q=80' },
-  { id: 'dairy', name: 'מוצרי חלב', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=150&q=80' },
-  { id: 'bakery', name: 'מאפייה', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=150&q=80' },
-  { id: 'pantry', name: 'מזווה', image: 'https://images.unsplash.com/photo-1584263347416-85a696b4eda7?auto=format&fit=crop&w=150&q=80' },
-  { id: 'cleaning', name: 'ניקיון', image: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=150&q=80' },
+  { id: 'new', name: 'מבצעים חמים', icon: 'flame' },
+  { id: 'drinks', name: 'משקאות', icon: 'coffee' },
+  { id: 'fruits_veg', name: 'פירות וירקות', icon: 'apple' },
+  { id: 'dairy', name: 'מוצרי חלב', icon: 'milk' },
+  { id: 'bakery', name: 'מאפייה', icon: 'croissant' },
+  { id: 'pantry', name: 'מזווה', icon: 'package' },
+  { id: 'cleaning', name: 'ניקיון', icon: 'sparkles' },
 ];
 
 export const PRODUCTS: Product[] = [

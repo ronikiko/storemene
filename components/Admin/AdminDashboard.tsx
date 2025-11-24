@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Product, Category, Customer, PriceList } from '../../types';
-import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
@@ -32,6 +32,16 @@ interface AdminDashboardProps {
   onLogout: () => void;
   onGoHome: () => void;
 }
+
+const iconMap: Record<string, React.ElementType> = {
+  'flame': Flame,
+  'coffee': Coffee,
+  'apple': Apple,
+  'milk': Milk,
+  'croissant': Croissant,
+  'package': Package,
+  'sparkles': Sparkles,
+};
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
   products, categories, customers, priceLists,
@@ -346,26 +356,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <table className="w-full text-right">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
                   <tr>
-                    <th className="px-6 py-4">תמונה</th>
+                    <th className="px-6 py-4">אייקון</th>
                     <th className="px-6 py-4">מזהה</th>
                     <th className="px-6 py-4">שם</th>
                     <th className="px-6 py-4">פעולות</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {categories.map((cat) => (
-                    <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4"><img src={cat.image} className="w-10 h-10 rounded-full" /></td>
-                      <td className="px-6 py-4 text-sm font-mono">{cat.id}</td>
-                      <td className="px-6 py-4 font-bold">{cat.name}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => onDeleteCategory(cat.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {categories.map((cat) => {
+                    const IconComponent = iconMap[ cat.icon ] || HelpCircle;
+                    return (
+                      <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                            <IconComponent className="w-6 h-6" />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-mono">{cat.id}</td>
+                        <td className="px-6 py-4 font-bold">{cat.name}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => onDeleteCategory(cat.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
