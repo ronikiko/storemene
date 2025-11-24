@@ -10,56 +10,56 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onQuickView }) => {
   return (
-    <div className={`group flex flex-col relative bg-white ${product.isSpecialPrice ? 'ring-2 ring-purple-500/20 rounded-lg' : ''}`}>
+    <div className="group flex flex-col relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-coffee-50">
       {/* Image Container */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-200 rounded-lg mb-2 cursor-pointer" onClick={() => onQuickView && onQuickView(product)}>
+      <div className="relative aspect-[4/5] overflow-hidden bg-coffee-50 cursor-pointer" onClick={() => onQuickView && onQuickView(product)}>
         <img
           src={product.imageUrl}
           alt={product.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        
+
         {/* Badges */}
-        <div className="absolute top-2 left-0 flex flex-col gap-1 items-start">
+        <div className="absolute top-3 left-3 flex flex-col gap-2 items-start">
           {product.isSpecialPrice && (
-             <span className="bg-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded-r-md shadow-sm flex items-center gap-1">
-               <Tag className="w-3 h-3" />
-               מחיר מיוחד
-             </span>
+            <span className="bg-white/90 backdrop-blur text-coffee-700 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 border border-coffee-100">
+              <Tag className="w-3 h-3" />
+              מחיר מיוחד
+            </span>
           )}
           {!product.isSpecialPrice && product.discount && (
-            <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-r-md shadow-sm">
+            <span className="bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
               -{product.discount}%
             </span>
           )}
           {product.isNew && (
-            <span className="bg-black text-white text-[10px] font-bold px-2 py-1 rounded-r-md shadow-sm">
+            <span className="bg-coffee-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
               חדש
             </span>
           )}
         </div>
 
         {/* Hover Action Buttons */}
-        <div className="absolute bottom-2 right-2 flex flex-col gap-2 z-10">
-           {/* Quick View Button */}
-           <button 
+        <div className="absolute bottom-3 right-3 flex flex-col gap-2 z-10">
+          {/* Quick View Button */}
+          <button
             onClick={(e) => {
               e.stopPropagation();
-              if(onQuickView) onQuickView(product);
+              if (onQuickView) onQuickView(product);
             }}
-            className="bg-white/90 hover:bg-black hover:text-white text-black p-2 rounded-full shadow-md transition-all md:opacity-0 md:translate-x-4 md:group-hover:opacity-100 md:group-hover:translate-x-0 delay-75"
+            className="bg-white text-coffee-900 p-2.5 rounded-full shadow-lg transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-coffee-50"
             aria-label="Quick view"
           >
             <Eye className="w-4 h-4" />
           </button>
 
           {/* Add to Cart Button */}
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
               onAddToCart(product);
             }}
-            className="bg-white/90 hover:bg-black hover:text-white text-black p-2 rounded-full shadow-md transition-all md:opacity-0 md:translate-x-4 md:group-hover:opacity-100 md:group-hover:translate-x-0"
+            className="bg-coffee-900 text-white p-2.5 rounded-full shadow-lg transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 delay-75 hover:bg-coffee-800"
             aria-label="Add to cart"
           >
             <ShoppingCart className="w-4 h-4" />
@@ -68,33 +68,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onQuick
       </div>
 
       {/* Content */}
-      <div className="px-1 flex-1 flex flex-col">
-        <div className="flex justify-between items-start mb-1">
-            <h3 
-              className="text-sm text-gray-700 truncate w-full font-normal cursor-pointer hover:text-black transition-colors"
-              onClick={() => onQuickView && onQuickView(product)}
-            >
-              {product.title}
-            </h3>
-        </div>
-        
-        <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-          <span className={`font-bold ${product.isSpecialPrice ? 'text-purple-700' : 'text-black'}`}>₪{product.price.toFixed(2)}</span>
-          {product.originalPrice && (
-            <span className="text-xs text-gray-400 line-through">₪{product.originalPrice.toFixed(2)}</span>
-          )}
+      <div className="p-4 flex-1 flex flex-col">
+        <div className="mb-2">
+          <h3
+            className="text-base font-bold text-coffee-900 truncate w-full cursor-pointer hover:text-coffee-600 transition-colors"
+            onClick={() => onQuickView && onQuickView(product)}
+          >
+            {product.title}
+          </h3>
         </div>
 
-        <div className="flex items-center gap-1 mb-2">
-          <div className="flex text-yellow-400">
-            {[...Array(5)].map((_, i) => (
-              <Star 
-                key={i} 
-                className={`w-3 h-3 ${i < Math.round(product.rating) ? 'fill-current' : 'text-gray-200'}`} 
-              />
-            ))}
-          </div>
-          <span className="text-[10px] text-gray-400">({product.reviews})</span>
+        <div className="flex items-baseline gap-2 mt-auto">
+          <span className={`text-lg font-black ${product.isSpecialPrice ? 'text-green-600' : 'text-coffee-900'}`}>₪{product.price.toFixed(2)}</span>
+          {product.originalPrice && (
+            <span className="text-xs text-coffee-300 line-through font-medium">₪{product.originalPrice.toFixed(2)}</span>
+          )}
         </div>
       </div>
     </div>

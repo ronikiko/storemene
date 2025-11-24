@@ -1,0 +1,14 @@
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+body {
+  background-color: #fdfbf7; /* cream */
+  color: #432c25; /* coffee-900 */
+}

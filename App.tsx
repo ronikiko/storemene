@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import CategoryNav from './components/CategoryNav';
 import ProductCard from './components/ProductCard';
-import FilterBar from './components/FilterBar';
 import QuickViewModal from './components/QuickViewModal';
 import CartPage from './components/CartPage';
 import AdminLogin from './components/Admin/AdminLogin';
 import AdminDashboard from './components/Admin/AdminDashboard';
+import ProductTable from './components/ProductTable';
+import Pagination from './components/Pagination';
 import { PRODUCTS as INITIAL_PRODUCTS, CATEGORIES as INITIAL_CATEGORIES, CUSTOMERS as INITIAL_CUSTOMERS, PRICE_LISTS as INITIAL_PRICE_LISTS } from './constants';
 import { Product, CartItem, Category, Customer, PriceList } from './types';
-import { Zap, AlertCircle, Lock, Users } from 'lucide-react';
+import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- Data State (Backend Simulation) ---
@@ -55,13 +57,17 @@ const App: React.FC = () => {
   }, [ products ]);
 
   const [ selectedCategory, setSelectedCategory ] = useState<string | null>(null);
-  const [ priceLimit, setPriceLimit ] = useState<number>(1000);
-  const [ minRating, setMinRating ] = useState<number | null>(null);
-  const [ isFilterOpen, setIsFilterOpen ] = useState(false);
+  const [ isFilterOpen, setIsFilterOpen ] = useState(false); // Kept for backward compat if needed, but mostly replaced
+  const [ isMobileSidebarOpen, setIsMobileSidebarOpen ] = useState(false);
+  const [ viewMode, setViewMode ] = useState<'grid' | 'table'>('grid');
+  const [ currentPage, setCurrentPage ] = useState(1);
+  const itemsPerPage = viewMode === 'grid' ? 12 : 20;
 
-  React.useEffect(() => {
-    setPriceLimit(maxGlobalPrice);
-  }, [ maxGlobalPrice ]);
+  // New Filters
+  const [ sortBy, setSortBy ] = useState<string>('default');
+  const [ selectedPriceRange, setSelectedPriceRange ] = useState<string | null>(null);
+  const [ showOnlyNew, setShowOnlyNew ] = useState(false);
+  const [ showOnlySale, setShowOnlySale ] = useState(false);
 
   // --- URL Simulation Logic ---
   React.useEffect(() => {
@@ -111,8 +117,12 @@ const App: React.FC = () => {
 
   const handleClearFilters = () => {
     setSelectedCategory(null);
-    setPriceLimit(maxGlobalPrice);
-    setMinRating(null);
+    setSortBy('default');
+    setSelectedPriceRange(null);
+    setShowOnlyNew(false);
+    setShowOnlySale(false);
+
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
@@ -173,68 +183,187 @@ const App: React.FC = () => {
   }
 
   const filteredProducts = products.filter(product => {
+    // 1. Category
     if (selectedCategory && selectedCategory !== 'new' && product.category !== selectedCategory) return false;
     if (selectedCategory === 'new' && !product.isNew) return false;
-    if (product.price > priceLimit) return false;
-    if (minRating !== null && product.rating < minRating) return false;
+
+    // 2. Status Filters
+    if (showOnlyNew && !product.isNew) return false;
+    if (showOnlySale && (!product.discount || product.discount <= 0)) return false;
+
+    // 3. Price Range
+    const effectiveInfo = getEffectiveProductInfo(product);
+    const price = effectiveInfo.price;
+
+    if (selectedPriceRange) {
+      if (selectedPriceRange === 'under-50' && price >= 50) return false;
+      if (selectedPriceRange === '50-100' && (price < 50 || price >= 100)) return false;
+      if (selectedPriceRange === '100-200' && (price < 100 || price >= 200)) return false;
+      if (selectedPriceRange === '200-plus' && price < 200) return false;
+    }
+
     return true;
+  }).sort((a, b) => {
+    const priceA = getEffectiveProductInfo(a).price;
+    const priceB = getEffectiveProductInfo(b).price;
+
+    switch (sortBy) {
+      case 'price-asc': return priceA - priceB;
+      case 'price-desc': return priceB - priceA;
+      case 'name-asc': return a.title.localeCompare(b.title);
+      default: return 0; // 'default' order (usually by ID or added date)
+    }
   });
 
   return (
-    <div className="min-h-screen pb-20 bg-white font-sans">
+    <div className="min-h-screen pb-20 bg-coffee-50 font-sans selection:bg-coffee-200">
       <Header
         cartCount={cartCount}
         onCartClick={() => setCurrentView('checkout')}
         onLogoClick={() => setCurrentView('home')}
         onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
       />
-      <CategoryNav categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
 
-      {/* Hero & Banner code from previous setup ... */}
-      {!selectedCategory && !minRating && priceLimit === maxGlobalPrice && (
-        <section className="relative w-full h-[200px] md:h-[400px] bg-gray-900 overflow-hidden group">
-          <div className="absolute inset-0 opacity-80 transition-opacity group-hover:opacity-70">
-            <img src="https://picsum.photos/1600/900?grayscale" alt="Hero" className="w-full h-full object-cover" />
+      <div className="container mx-auto px-4 mt-6 mb-8">
+        <CategoryNav
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(id) => { setSelectedCategory(id); setCurrentPage(1); }}
+        />
+      </div>
+
+      <div className="container mx-auto px-4 py-8 flex gap-8">
+
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block">
+          <Sidebar
+            selectedPriceRange={selectedPriceRange}
+            onPriceRangeChange={setSelectedPriceRange}
+            showOnlyNew={showOnlyNew}
+            onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
+            showOnlySale={showOnlySale}
+            onToggleSale={() => setShowOnlySale(!showOnlySale)}
+          />
+        </div>
+
+        {/* Mobile Sidebar Drawer */}
+        {isMobileSidebarOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)} />
+            <div className="relative bg-white w-4/5 max-w-xs h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-coffee-900">סינון</h2>
+                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 text-coffee-500">
+                  <span className="sr-only">סגור</span>
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <Sidebar
+                selectedPriceRange={selectedPriceRange}
+                onPriceRangeChange={setSelectedPriceRange}
+                showOnlyNew={showOnlyNew}
+                onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
+                showOnlySale={showOnlySale}
+                onToggleSale={() => setShowOnlySale(!showOnlySale)}
+              />
+            </div>
           </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-4">
-            <h2 className="text-3xl md:text-6xl font-black mb-2 tracking-tight italic drop-shadow-lg">טרי ואיכותי!</h2>
-            <p className="text-sm md:text-xl font-medium mb-6 text-gray-200">כל המוצרים הטריים במקום אחד</p>
-            <button className="bg-white text-black font-bold py-3 px-8 rounded-full hover:scale-105 hover:bg-black hover:text-white transition-all text-sm md:text-base shadow-xl">
-              לקנייה עכשיו
-            </button>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 min-h-[600px]">
+
+          {/* Top Toolbar */}
+          <div className="bg-white p-4 rounded-xl border border-coffee-100 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+
+            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+              <button
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="md:hidden flex items-center gap-2 text-coffee-900 font-bold"
+              >
+                <Filter className="w-5 h-5" />
+                <span>סינון</span>
+              </button>
+
+              <span className="text-sm text-coffee-500 font-medium hidden md:block">
+                {filteredProducts.length} מוצרים
+              </span>
+            </div>
+
+            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-coffee-700 hidden md:inline">מיון:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-coffee-50 border-none rounded-lg text-sm py-2 pl-8 pr-4 text-coffee-900 font-medium focus:ring-1 focus:ring-coffee-200"
+                >
+                  <option value="default">מומלץ</option>
+                  <option value="price-asc">מחיר: נמוך לגבוה</option>
+                  <option value="price-desc">מחיר: גבוה לנמוך</option>
+                  <option value="name-asc">שם: א-ת</option>
+                </select>
+              </div>
+
+              <div className="flex bg-coffee-50 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
-        </section>
-      )}
 
-      <FilterBar
-        maxPrice={maxGlobalPrice} currentMaxPrice={priceLimit} onPriceChange={setPriceLimit}
-        minRating={minRating} onRatingChange={setMinRating} resultCount={filteredProducts.length}
-        onClear={handleClearFilters} isOpen={isFilterOpen} setIsOpen={setIsFilterOpen}
-      />
-
-      <main className="container mx-auto px-2 md:px-4 min-h-[400px]">
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-8 md:gap-6">
-            {filteredProducts.map((product) => {
-              const effectiveInfo = getEffectiveProductInfo(product);
-              return (
-                <ProductCard
-                  key={product.id}
-                  product={{ ...effectiveInfo, originalPrice: effectiveInfo.originalPrice }}
+          {filteredProducts.length > 0 ? (
+            <>
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => {
+                    const effectiveInfo = getEffectiveProductInfo(product);
+                    return (
+                      <ProductCard
+                        key={product.id}
+                        product={{ ...effectiveInfo, originalPrice: effectiveInfo.originalPrice }}
+                        onAddToCart={(p) => handleAddToCart(p, 1)}
+                        onQuickView={setQuickViewProduct}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <ProductTable
+                  products={filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(p => {
+                    const effectiveInfo = getEffectiveProductInfo(p);
+                    return { ...effectiveInfo, originalPrice: effectiveInfo.originalPrice };
+                  })}
                   onAddToCart={(p) => handleAddToCart(p, 1)}
                   onQuickView={setQuickViewProduct}
                 />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <AlertCircle className="w-12 h-12 mb-4 text-gray-300" />
-            <p className="text-lg font-medium">לא נמצאו מוצרים התואמים את הסינון.</p>
-            <button onClick={handleClearFilters} className="mt-4 text-black font-bold underline hover:no-underline">נקה סינונים</button>
-          </div>
-        )}
-      </main>
+              )}
+
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(filteredProducts.length / itemsPerPage)}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-coffee-400 bg-white rounded-2xl border border-coffee-50">
+              <AlertCircle className="w-16 h-16 mb-6 opacity-50" />
+              <p className="text-xl font-bold text-coffee-800">לא נמצאו מוצרים.</p>
+              <button onClick={handleClearFilters} className="mt-6 text-coffee-600 font-bold underline hover:text-coffee-900 hover:no-underline">נקה סינונים</button>
+            </div>
+          )}
+        </main>
+      </div>
 
       <QuickViewModal
         isOpen={!!quickViewProduct}
@@ -243,16 +372,16 @@ const App: React.FC = () => {
         onAddToCart={handleAddToCart}
       />
 
-      {/* Footer & Mobile Nav from previous setup ... */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-2 px-6 flex justify-between items-center z-40 text-[10px] font-medium text-gray-500 safe-area-pb">
-        <div className="flex flex-col items-center gap-1 text-black" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setCurrentView('home'); }}>
+      {/* Footer & Mobile Nav */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-coffee-100 py-2 px-6 flex justify-between items-center z-40 text-[10px] font-bold text-coffee-400 safe-area-pb">
+        <div className="flex flex-col items-center gap-1 text-coffee-900" onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setCurrentView('home'); }}>
           <Zap className="w-5 h-5" /> <span>בית</span>
         </div>
-        <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-black" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-          <div className="w-5 h-5 flex items-center justify-center rounded-sm border border-gray-300"><div className="w-3 h-0.5 bg-gray-500"></div></div> <span>סינון</span>
+        <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-coffee-900 transition-colors" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+          <div className="w-5 h-5 flex items-center justify-center rounded-sm border border-coffee-300"><div className="w-3 h-0.5 bg-coffee-500"></div></div> <span>סינון</span>
         </div>
         <div
-          className="flex flex-col items-center gap-1 cursor-pointer"
+          className="flex flex-col items-center gap-1 cursor-pointer hover:text-coffee-900 transition-colors"
           onClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
         >
           <Lock className="w-5 h-5" /> <span>ניהול</span>
@@ -265,10 +394,10 @@ const App: React.FC = () => {
         const activePriceList = activeCustomer?.priceListId ? priceLists.find(pl => pl.id === activeCustomer.priceListId) : null;
 
         return (
-          <div className="fixed bottom-16 md:bottom-4 left-4 z-50 bg-black/90 backdrop-blur text-white px-4 py-2 rounded-full shadow-lg text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4">
+          <div className="fixed bottom-16 md:bottom-4 left-4 z-50 bg-coffee-900/95 backdrop-blur text-white px-5 py-3 rounded-full shadow-xl text-xs flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 border border-white/10">
             <Users className="w-4 h-4 text-green-400" />
-            <span className="opacity-75">צפה כלקוח:</span>
-            <span className="font-bold text-white">
+            <span className="opacity-75 font-medium">צפה כלקוח:</span>
+            <span className="font-bold text-white text-sm">
               {activeCustomer?.name}
               {activePriceList && <span className="text-green-400 ml-1">({activePriceList.name})</span>}
             </span>
