@@ -1,22 +1,31 @@
 import express from 'express';
-import db from '../db.js';
+import { db } from '../db/index.js';
+import { priceLists, priceListItems } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
 // GET all price lists with their items
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const priceLists = db.prepare('SELECT * FROM price_lists').all();
+    const allPriceLists = await db.select().from(priceLists);
     
     // Get items for each price list
-    const priceListsWithItems = priceLists.map(pl => {
-      const items = db.prepare('SELECT productId, price FROM price_list_items WHERE priceListId = ?').all(pl.id);
-      const prices = {};
-      items.forEach(item => {
-        prices[item.productId] = item.price;
-      });
-      return { ...pl, prices };
-    });
+    const priceListsWithItems = await Promise.all(
+      allPriceLists.map(async (pl) => {
+        const items = await db
+          .select()
+          .from(priceListItems)
+          .where(eq(priceListItems.priceListId, pl.id));
+        
+        const prices = {};
+        items.forEach(item => {
+          prices[item.productId] = item.price;
+        });
+        
+        return { ...pl, prices };
+      })
+    );
     
     res.json(priceListsWithItems);
   } catch (error) {
@@ -25,14 +34,22 @@ router.get('/', (req, res) => {
 });
 
 // GET single price list
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const priceList = db.prepare('SELECT * FROM price_lists WHERE id = ?').get(req.params.id);
+    const [priceList] = await db
+      .select()
+      .from(priceLists)
+      .where(eq(priceLists.id, req.params.id));
+    
     if (!priceList) {
       return res.status(404).json({ error: 'Price list not found' });
     }
     
-    const items = db.prepare('SELECT productId, price FROM price_list_items WHERE priceListId = ?').all(req.params.id);
+    const items = await db
+      .select()
+      .from(priceListItems)
+      .where(eq(priceListItems.priceListId, req.params.id));
+    
     const prices = {};
     items.forEach(item => {
       prices[item.productId] = item.price;
@@ -45,24 +62,34 @@ router.get('/:id', (req, res) => {
 });
 
 // POST create price list
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { id, name, prices } = req.body;
     
     // Insert price list
-    const stmt = db.prepare('INSERT INTO price_lists (id, name) VALUES (?, ?)');
-    stmt.run(id, name);
+    const [newPriceList] = await db
+      .insert(priceLists)
+      .values({ id, name })
+      .returning();
     
     // Insert price list items
     if (prices && typeof prices === 'object') {
-      const itemStmt = db.prepare('INSERT INTO price_list_items (priceListId, productId, price) VALUES (?, ?, ?)');
-      for (const [productId, price] of Object.entries(prices)) {
-        itemStmt.run(id, parseInt(productId), price);
+      const itemsToInsert = Object.entries(prices).map(([productId, price]) => ({
+        priceListId: id,
+        productId: parseInt(productId),
+        price: price,
+      }));
+      
+      if (itemsToInsert.length > 0) {
+        await db.insert(priceListItems).values(itemsToInsert);
       }
     }
     
-    const newPriceList = db.prepare('SELECT * FROM price_lists WHERE id = ?').get(id);
-    const items = db.prepare('SELECT productId, price FROM price_list_items WHERE priceListId = ?').all(id);
+    const items = await db
+      .select()
+      .from(priceListItems)
+      .where(eq(priceListItems.priceListId, id));
+    
     const pricesObj = {};
     items.forEach(item => {
       pricesObj[item.productId] = item.price;
@@ -75,29 +102,43 @@ router.post('/', (req, res) => {
 });
 
 // PUT update price list
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { name, prices } = req.body;
     
     // Update price list name
-    const stmt = db.prepare('UPDATE price_lists SET name = ? WHERE id = ?');
-    const result = stmt.run(name, req.params.id);
+    const [updatedPriceList] = await db
+      .update(priceLists)
+      .set({ name })
+      .where(eq(priceLists.id, req.params.id))
+      .returning();
     
-    if (result.changes === 0) {
+    if (!updatedPriceList) {
       return res.status(404).json({ error: 'Price list not found' });
     }
     
     // Delete existing items and insert new ones
     if (prices && typeof prices === 'object') {
-      db.prepare('DELETE FROM price_list_items WHERE priceListId = ?').run(req.params.id);
-      const itemStmt = db.prepare('INSERT INTO price_list_items (priceListId, productId, price) VALUES (?, ?, ?)');
-      for (const [productId, price] of Object.entries(prices)) {
-        itemStmt.run(req.params.id, parseInt(productId), price);
+      await db
+        .delete(priceListItems)
+        .where(eq(priceListItems.priceListId, req.params.id));
+      
+      const itemsToInsert = Object.entries(prices).map(([productId, price]) => ({
+        priceListId: req.params.id,
+        productId: parseInt(productId),
+        price: price,
+      }));
+      
+      if (itemsToInsert.length > 0) {
+        await db.insert(priceListItems).values(itemsToInsert);
       }
     }
     
-    const updatedPriceList = db.prepare('SELECT * FROM price_lists WHERE id = ?').get(req.params.id);
-    const items = db.prepare('SELECT productId, price FROM price_list_items WHERE priceListId = ?').all(req.params.id);
+    const items = await db
+      .select()
+      .from(priceListItems)
+      .where(eq(priceListItems.priceListId, req.params.id));
+    
     const pricesObj = {};
     items.forEach(item => {
       pricesObj[item.productId] = item.price;
@@ -110,12 +151,19 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE price list
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const stmt = db.prepare('DELETE FROM price_lists WHERE id = ?');
-    const result = stmt.run(req.params.id);
+    // Delete price list items first (foreign key constraint)
+    await db
+      .delete(priceListItems)
+      .where(eq(priceListItems.priceListId, req.params.id));
     
-    if (result.changes === 0) {
+    const [deletedPriceList] = await db
+      .delete(priceLists)
+      .where(eq(priceLists.id, req.params.id))
+      .returning();
+    
+    if (!deletedPriceList) {
       return res.status(404).json({ error: 'Price list not found' });
     }
     

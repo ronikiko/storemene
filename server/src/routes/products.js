@@ -1,31 +1,31 @@
 import express from 'express';
-import db from '../db.js';
+import { db } from '../db/index.js';
+import { products } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
 // GET all products
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const products = db.prepare('SELECT * FROM products').all();
-    // Convert isNew from 0/1 to boolean
-    const formattedProducts = products.map(p => ({
-      ...p,
-      isNew: Boolean(p.isNew)
-    }));
-    res.json(formattedProducts);
+    const allProducts = await db.select().from(products);
+    res.json(allProducts);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // GET single product
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, parseInt(req.params.id)));
+    
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    product.isNew = Boolean(product.isNew);
     res.json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -33,29 +33,25 @@ router.get('/:id', (req, res) => {
 });
 
 // POST create product
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { title, price, originalPrice, discount, imageUrl, rating, reviews, isNew, category } = req.body;
     
-    const stmt = db.prepare(`
-      INSERT INTO products (title, price, originalPrice, discount, imageUrl, rating, reviews, isNew, category)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    const [newProduct] = await db
+      .insert(products)
+      .values({
+        title,
+        price,
+        originalPrice: originalPrice || null,
+        discount: discount || null,
+        imageUrl,
+        rating: rating || 0,
+        reviews: reviews || 0,
+        isNew: isNew || false,
+        category,
+      })
+      .returning();
     
-    const result = stmt.run(
-      title,
-      price,
-      originalPrice || null,
-      discount || null,
-      imageUrl,
-      rating || 0,
-      reviews || 0,
-      isNew ? 1 : 0,
-      category
-    );
-    
-    const newProduct = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
-    newProduct.isNew = Boolean(newProduct.isNew);
     res.status(201).json(newProduct);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -63,36 +59,30 @@ router.post('/', (req, res) => {
 });
 
 // PUT update product
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { title, price, originalPrice, discount, imageUrl, rating, reviews, isNew, category } = req.body;
     
-    const stmt = db.prepare(`
-      UPDATE products 
-      SET title = ?, price = ?, originalPrice = ?, discount = ?, imageUrl = ?, 
-          rating = ?, reviews = ?, isNew = ?, category = ?
-      WHERE id = ?
-    `);
+    const [updatedProduct] = await db
+      .update(products)
+      .set({
+        title,
+        price,
+        originalPrice: originalPrice || null,
+        discount: discount || null,
+        imageUrl,
+        rating: rating || 0,
+        reviews: reviews || 0,
+        isNew: isNew || false,
+        category,
+      })
+      .where(eq(products.id, parseInt(req.params.id)))
+      .returning();
     
-    const result = stmt.run(
-      title,
-      price,
-      originalPrice || null,
-      discount || null,
-      imageUrl,
-      rating || 0,
-      reviews || 0,
-      isNew ? 1 : 0,
-      category,
-      req.params.id
-    );
-    
-    if (result.changes === 0) {
+    if (!updatedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
     
-    const updatedProduct = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
-    updatedProduct.isNew = Boolean(updatedProduct.isNew);
     res.json(updatedProduct);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -100,12 +90,14 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE product
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const stmt = db.prepare('DELETE FROM products WHERE id = ?');
-    const result = stmt.run(req.params.id);
+    const [deletedProduct] = await db
+      .delete(products)
+      .where(eq(products.id, parseInt(req.params.id)))
+      .returning();
     
-    if (result.changes === 0) {
+    if (!deletedProduct) {
       return res.status(404).json({ error: 'Product not found' });
     }
     

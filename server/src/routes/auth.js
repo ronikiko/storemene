@@ -1,10 +1,12 @@
 import express from 'express';
-import db from '../db.js';
+import { db } from '../db/index.js';
+import { customers } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
 // POST authenticate customer by token
-router.post('/customer', (req, res) => {
+router.post('/customer', async (req, res) => {
   try {
     const { token } = req.body;
     
@@ -12,7 +14,10 @@ router.post('/customer', (req, res) => {
       return res.status(400).json({ error: 'Token is required' });
     }
     
-    const customer = db.prepare('SELECT * FROM customers WHERE token = ?').get(token);
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.token, token));
     
     if (!customer) {
       return res.status(404).json({ error: 'Customer not found' });
@@ -25,7 +30,7 @@ router.post('/customer', (req, res) => {
 });
 
 // POST admin login (simple hardcoded check)
-router.post('/admin', (req, res) => {
+router.post('/admin', async (req, res) => {
   try {
     const { password } = req.body;
     

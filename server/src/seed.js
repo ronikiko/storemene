@@ -1,16 +1,10 @@
-import db from './db.js';
+import { db } from './db/index.js';
+import { products, categories, priceLists, priceListItems, customers } from './db/schema.js';
 
 console.log('Seeding database...');
 
-// Clear existing data
-db.prepare('DELETE FROM price_list_items').run();
-db.prepare('DELETE FROM customers').run();
-db.prepare('DELETE FROM price_lists').run();
-db.prepare('DELETE FROM products').run();
-db.prepare('DELETE FROM categories').run();
-
 // Seed Categories
-const categories = [
+const categoriesData = [
   { id: 'new', name: 'מבצעים חמים', icon: 'flame' },
   { id: 'drinks', name: 'משקאות', icon: 'coffee' },
   { id: 'fruits_veg', name: 'פירות וירקות', icon: 'apple' },
@@ -20,14 +14,11 @@ const categories = [
   { id: 'cleaning', name: 'ניקיון', icon: 'sparkles' },
 ];
 
-const categoryStmt = db.prepare('INSERT INTO categories (id, name, icon) VALUES (?, ?, ?)');
-categories.forEach(cat => {
-  categoryStmt.run(cat.id, cat.name, cat.icon);
-});
-console.log(`✓ Seeded ${categories.length} categories`);
+await db.insert(categories).values(categoriesData);
+console.log(`✓ Seeded ${categoriesData.length} categories`);
 
 // Seed Products
-const products = [
+const productsData = [
   {
     title: "שישיית מים מינרליים 1.5L",
     price: 12.90,
@@ -36,7 +27,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1616118132534-381148898bb8?auto=format&fit=crop&w=600&q=80",
     rating: 4.9,
     reviews: 540,
-    isNew: 1,
+    isNew: true,
     category: "drinks"
   },
   {
@@ -45,7 +36,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=600&q=80",
     rating: 4.8,
     reviews: 320,
-    isNew: 0,
+    isNew: false,
     category: "dairy"
   },
   {
@@ -56,7 +47,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?auto=format&fit=crop&w=600&q=80",
     rating: 4.7,
     reviews: 150,
-    isNew: 0,
+    isNew: false,
     category: "fruits_veg"
   },
   {
@@ -65,7 +56,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=600&q=80",
     rating: 4.9,
     reviews: 85,
-    isNew: 1,
+    isNew: true,
     category: "bakery"
   },
   {
@@ -76,7 +67,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=600&q=80",
     rating: 4.8,
     reviews: 420,
-    isNew: 0,
+    isNew: false,
     category: "drinks"
   },
   {
@@ -85,7 +76,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1523049673856-3eb43db958cd?auto=format&fit=crop&w=600&q=80",
     rating: 4.6,
     reviews: 98,
-    isNew: 0,
+    isNew: false,
     category: "fruits_veg"
   },
   {
@@ -96,7 +87,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?auto=format&fit=crop&w=600&q=80",
     rating: 4.5,
     reviews: 210,
-    isNew: 0,
+    isNew: false,
     category: "cleaning"
   },
   {
@@ -105,7 +96,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&w=600&q=80",
     rating: 4.7,
     reviews: 180,
-    isNew: 0,
+    isNew: false,
     category: "pantry"
   },
   {
@@ -116,7 +107,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1618167297747-5026db1766cb?auto=format&fit=crop&w=600&q=80",
     rating: 4.8,
     reviews: 67,
-    isNew: 1,
+    isNew: true,
     category: "dairy"
   },
   {
@@ -125,7 +116,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1621447504864-d8686e12698c?auto=format&fit=crop&w=600&q=80",
     rating: 4.4,
     reviews: 320,
-    isNew: 0,
+    isNew: false,
     category: "pantry"
   },
   {
@@ -134,7 +125,7 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80",
     rating: 4.9,
     reviews: 150,
-    isNew: 0,
+    isNew: false,
     category: "bakery"
   },
   {
@@ -145,60 +136,37 @@ const products = [
     imageUrl: "https://images.unsplash.com/photo-1584622050111-993a426fbf0a?auto=format&fit=crop&w=600&q=80",
     rating: 4.8,
     reviews: 112,
-    isNew: 1,
+    isNew: true,
     category: "cleaning"
   }
 ];
 
-const productStmt = db.prepare(`
-  INSERT INTO products (title, price, originalPrice, discount, imageUrl, rating, reviews, isNew, category)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-`);
-
-products.forEach(p => {
-  productStmt.run(
-    p.title,
-    p.price,
-    p.originalPrice || null,
-    p.discount || null,
-    p.imageUrl,
-    p.rating,
-    p.reviews,
-    p.isNew,
-    p.category
-  );
-});
-console.log(`✓ Seeded ${products.length} products`);
+const insertedProducts = await db.insert(products).values(productsData).returning();
+console.log(`✓ Seeded ${insertedProducts.length} products`);
 
 // Seed Price Lists
-const priceLists = [
+const priceListsData = [
   { id: 'wholesale', name: 'סיטונאות' },
   { id: 'vip', name: 'מועדון VIP' }
 ];
 
-const priceListStmt = db.prepare('INSERT INTO price_lists (id, name) VALUES (?, ?)');
-priceLists.forEach(pl => {
-  priceListStmt.run(pl.id, pl.name);
-});
-console.log(`✓ Seeded ${priceLists.length} price lists`);
+await db.insert(priceLists).values(priceListsData);
+console.log(`✓ Seeded ${priceListsData.length} price lists`);
 
 // Seed Price List Items
-const priceListItems = [
-  { priceListId: 'wholesale', productId: 1, price: 9.90 },
-  { priceListId: 'wholesale', productId: 5, price: 6.90 },
-  { priceListId: 'wholesale', productId: 12, price: 29.90 },
-  { priceListId: 'vip', productId: 3, price: 11.90 },
-  { priceListId: 'vip', productId: 9, price: 19.90 },
+const priceListItemsData = [
+  { priceListId: 'wholesale', productId: insertedProducts[0].id, price: 9.90 },
+  { priceListId: 'wholesale', productId: insertedProducts[4].id, price: 6.90 },
+  { priceListId: 'wholesale', productId: insertedProducts[11].id, price: 29.90 },
+  { priceListId: 'vip', productId: insertedProducts[2].id, price: 11.90 },
+  { priceListId: 'vip', productId: insertedProducts[8].id, price: 19.90 },
 ];
 
-const priceListItemStmt = db.prepare('INSERT INTO price_list_items (priceListId, productId, price) VALUES (?, ?, ?)');
-priceListItems.forEach(item => {
-  priceListItemStmt.run(item.priceListId, item.productId, item.price);
-});
-console.log(`✓ Seeded ${priceListItems.length} price list items`);
+await db.insert(priceListItems).values(priceListItemsData);
+console.log(`✓ Seeded ${priceListItemsData.length} price list items`);
 
 // Seed Customers
-const customers = [
+const customersData = [
   {
     id: 'c1',
     name: 'דני כהן (לקוח רגיל)',
@@ -225,15 +193,8 @@ const customers = [
   }
 ];
 
-const customerStmt = db.prepare(`
-  INSERT INTO customers (id, name, email, phone, priceListId, token)
-  VALUES (?, ?, ?, ?, ?, ?)
-`);
-
-customers.forEach(c => {
-  customerStmt.run(c.id, c.name, c.email, c.phone, c.priceListId, c.token);
-});
-console.log(`✓ Seeded ${customers.length} customers`);
+await db.insert(customers).values(customersData);
+console.log(`✓ Seeded ${customersData.length} customers`);
 
 console.log('\n✅ Database seeded successfully!');
 process.exit(0);

@@ -1,22 +1,28 @@
 import express from 'express';
-import db from '../db.js';
+import { db } from '../db/index.js';
+import { categories } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
 // GET all categories
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const categories = db.prepare('SELECT * FROM categories').all();
-    res.json(categories);
+    const allCategories = await db.select().from(categories);
+    res.json(allCategories);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // GET single category
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
+    const [category] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, req.params.id));
+    
     if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
@@ -27,14 +33,15 @@ router.get('/:id', (req, res) => {
 });
 
 // POST create category
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { id, name, icon } = req.body;
     
-    const stmt = db.prepare('INSERT INTO categories (id, name, icon) VALUES (?, ?, ?)');
-    stmt.run(id, name, icon);
+    const [newCategory] = await db
+      .insert(categories)
+      .values({ id, name, icon })
+      .returning();
     
-    const newCategory = db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
     res.status(201).json(newCategory);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -42,18 +49,20 @@ router.post('/', (req, res) => {
 });
 
 // PUT update category
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { name, icon } = req.body;
     
-    const stmt = db.prepare('UPDATE categories SET name = ?, icon = ? WHERE id = ?');
-    const result = stmt.run(name, icon, req.params.id);
+    const [updatedCategory] = await db
+      .update(categories)
+      .set({ name, icon })
+      .where(eq(categories.id, req.params.id))
+      .returning();
     
-    if (result.changes === 0) {
+    if (!updatedCategory) {
       return res.status(404).json({ error: 'Category not found' });
     }
     
-    const updatedCategory = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
     res.json(updatedCategory);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -61,12 +70,14 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE category
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const stmt = db.prepare('DELETE FROM categories WHERE id = ?');
-    const result = stmt.run(req.params.id);
+    const [deletedCategory] = await db
+      .delete(categories)
+      .where(eq(categories.id, req.params.id))
+      .returning();
     
-    if (result.changes === 0) {
+    if (!deletedCategory) {
       return res.status(404).json({ error: 'Category not found' });
     }
     

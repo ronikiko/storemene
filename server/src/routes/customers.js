@@ -1,22 +1,28 @@
 import express from 'express';
-import db from '../db.js';
+import { db } from '../db/index.js';
+import { customers } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
 // GET all customers
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const customers = db.prepare('SELECT * FROM customers').all();
-    res.json(customers);
+    const allCustomers = await db.select().from(customers);
+    res.json(allCustomers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // GET single customer
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.params.id);
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, req.params.id));
+    
     if (!customer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
@@ -27,18 +33,22 @@ router.get('/:id', (req, res) => {
 });
 
 // POST create customer
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { id, name, email, phone, priceListId, token } = req.body;
     
-    const stmt = db.prepare(`
-      INSERT INTO customers (id, name, email, phone, priceListId, token)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
+    const [newCustomer] = await db
+      .insert(customers)
+      .values({
+        id,
+        name,
+        email,
+        phone,
+        priceListId: priceListId || null,
+        token,
+      })
+      .returning();
     
-    stmt.run(id, name, email, phone, priceListId || null, token);
-    
-    const newCustomer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
     res.status(201).json(newCustomer);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -46,23 +56,25 @@ router.post('/', (req, res) => {
 });
 
 // PUT update customer
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { name, email, phone, priceListId } = req.body;
     
-    const stmt = db.prepare(`
-      UPDATE customers 
-      SET name = ?, email = ?, phone = ?, priceListId = ?
-      WHERE id = ?
-    `);
+    const [updatedCustomer] = await db
+      .update(customers)
+      .set({
+        name,
+        email,
+        phone,
+        priceListId: priceListId || null,
+      })
+      .where(eq(customers.id, req.params.id))
+      .returning();
     
-    const result = stmt.run(name, email, phone, priceListId || null, req.params.id);
-    
-    if (result.changes === 0) {
+    if (!updatedCustomer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
     
-    const updatedCustomer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.params.id);
     res.json(updatedCustomer);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -70,12 +82,14 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE customer
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
-    const result = stmt.run(req.params.id);
+    const [deletedCustomer] = await db
+      .delete(customers)
+      .where(eq(customers.id, req.params.id))
+      .returning();
     
-    if (result.changes === 0) {
+    if (!deletedCustomer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
     

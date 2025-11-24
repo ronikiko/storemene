@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
               onClick={onLogoClick}
               className="text-2xl md:text-3xl font-black tracking-tight text-coffee-900 cursor-pointer hover:opacity-90 transition-opacity"
             >
-              החנות של מיצ׳י
+              קטלוג מוצרים - קיקו שיווק
             </h1>
           </div>
 
