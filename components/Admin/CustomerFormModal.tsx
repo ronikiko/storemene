@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Customer, PriceList } from '../../types';
 import { X, Save } from 'lucide-react';
+import { Customer, PriceList } from '../../types';
+import { useToast } from '../../context/ToastContext';
 
 interface CustomerFormModalProps {
   isOpen: boolean;
-  customerToEdit: Customer | null;
-  priceLists: PriceList[];
   onClose: () => void;
-  onSave: (customer: Customer) => void;
+  onSubmit: (customer: Customer) => void;
+  customerToEdit?: Customer | null;
+  priceLists: PriceList[];
 }
 
-const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, customerToEdit, priceLists, onClose, onSave }) => {
-  const [ formData, setFormData ] = useState<Customer>({
-    id: '',
+const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, onSubmit, customerToEdit, priceLists }) => {
+  const { error } = useToast();
+  const [ formData, setFormData ] = useState<Omit<Customer, 'id'>>({
     name: '',
     email: '',
     phone: '',
@@ -22,10 +23,15 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, customerT
 
   useEffect(() => {
     if (customerToEdit) {
-      setFormData(customerToEdit);
+      setFormData({
+        name: customerToEdit.name,
+        email: customerToEdit.email,
+        phone: customerToEdit.phone,
+        priceListId: customerToEdit.priceListId || '',
+        token: customerToEdit.token
+      });
     } else {
       setFormData({
-        id: '',
         name: '',
         email: '',
         phone: '',
@@ -39,14 +45,18 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, customerT
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
+    if (!formData.name) {
+      error('נא למלא שם לקוח');
+      return;
+    }
 
-    const payload = {
+    const payload: Customer = {
+      id: customerToEdit ? customerToEdit.id : Date.now().toString(),
       ...formData,
-      id: formData.id || Date.now().toString(),
-      token: formData.token || (Math.random().toString(36).substring(2) + Date.now().toString(36))
+      token: formData.token || Math.random().toString(36).substring(2, 15)
     };
-    onSave(payload);
+
+    onSubmit(payload);
     onClose();
   };
 

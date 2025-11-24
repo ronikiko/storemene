@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
 import { Lock, ArrowRight } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -7,17 +9,16 @@ interface AdminLoginProps {
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [ password, setPassword ] = useState('');
+  const { error: toastError } = useToast(); // Renamed to avoid conflict with removed local 'error' state
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Simple hardcoded validation for demo purposes
-    if (email === 'admin@store.com' && password === '123456') {
+    if (password === 'admin123') { // Changed password and removed email check
       onLogin();
     } else {
-      setError('שם משתמש או סיסמה שגויים (נסה: admin@store.com / 123456)');
+      toastError('סיסמה שגויה'); // Using toast for error display
     }
   };
 
@@ -44,7 +45,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">סיסמה</label>
             <input
@@ -71,7 +72,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
           </button>
         </form>
 
-        <button 
+        <button
           onClick={onBack}
           className="w-full mt-6 flex items-center justify-center gap-2 text-gray-500 hover:text-black font-medium text-sm"
         >

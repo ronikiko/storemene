@@ -5,6 +5,7 @@ import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
 import PriceListFormModal from './PriceListFormModal';
+import { useToast } from '../../context/ToastContext';
 
 interface AdminDashboardProps {
   products: Product[];
@@ -42,6 +43,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [ activeTab, setActiveTab ] = useState<'products' | 'categories' | 'customers' | 'pricelists'>('products');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { success, error, info } = useToast();
 
   // Modal States
   const [ isProductModalOpen, setIsProductModalOpen ] = useState(false);

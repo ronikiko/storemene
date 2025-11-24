@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CartItem } from '../types';
 import { Trash2, Plus, Minus, ArrowRight, MessageCircle, ShieldCheck, AlertTriangle, X } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 interface CartPageProps {
   cartItems: CartItem[];
@@ -10,13 +11,14 @@ interface CartPageProps {
 }
 
 const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onBack }) => {
-  const [customerName, setCustomerName] = useState('');
-  const [address, setAddress] = useState('');
-  const [itemToRemove, setItemToRemove] = useState<number | null>(null);
+  const [ customerName, setCustomerName ] = useState('');
+  const [ address, setAddress ] = useState('');
+  const [ itemToRemove, setItemToRemove ] = useState<number | null>(null);
+  const { error } = useToast();
 
   const subtotal = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  }, [cartItems]);
+  }, [ cartItems ]);
 
   const shippingCost = subtotal > 199 ? 0 : 30;
   const total = subtotal + shippingCost;
@@ -27,13 +29,13 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
       return;
     }
 
-    const phoneNumber = "9720506932920"; // REPLACE WITH YOUR REAL NUMBER
-    
+    const phoneNumber = "9720543087670"; // REPLACE WITH YOUR REAL NUMBER
+
     let message = `*היי, אשמח לבצע הזמנה חדשה מ 👋\n\n`;
     message += `*שם הלקוח:* ${customerName}\n`;
     message += `*כתובת:* ${address || 'איסוף עצמי'}\n\n`;
     message += `*סיכום הזמנה:*\n`;
-    
+
     cartItems.forEach(item => {
       message += `▫️ ${item.quantity}x ${item.title} - ₪${(item.price * item.quantity).toFixed(2)}\n`;
     });
@@ -61,7 +63,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">סל הקניות שלך ריק</h2>
         <p className="text-gray-500 mb-8">נראה שעדיין לא בחרת פריטים. בואי נמצא לך משהו מהמם!</p>
-        <button 
+        <button
           onClick={onBack}
           className="bg-black text-white px-8 py-3 rounded-full font-bold hover:bg-gray-800 transition-all flex items-center gap-2"
         >
@@ -90,14 +92,14 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
                 <div className="w-24 h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
                   <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                 </div>
-                
+
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-bold text-gray-900">{item.title}</h3>
                       <p className="text-sm text-gray-500">{item.category}</p>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setItemToRemove(item.id)}
                       className="text-gray-400 hover:text-red-500 transition-colors p-1"
                     >
@@ -107,7 +109,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
 
                   <div className="flex justify-between items-end mt-4">
                     <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-1">
-                      <button 
+                      <button
                         onClick={() => onUpdateQuantity(item.id, -1)}
                         className="w-8 h-8 flex items-center justify-center bg-white rounded shadow-sm hover:bg-gray-100 text-gray-600"
                         disabled={item.quantity <= 1}
@@ -115,7 +117,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
-                      <button 
+                      <button
                         onClick={() => onUpdateQuantity(item.id, 1)}
                         className="w-8 h-8 flex items-center justify-center bg-white rounded shadow-sm hover:bg-gray-100 text-black"
                       >
@@ -139,13 +141,13 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
         <div className="lg:w-[380px]">
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sticky top-24">
             <h3 className="font-bold text-xl mb-6">סיכום הזמנה</h3>
-            
+
             {/* User Details Form */}
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">שם מלא *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="ישראל ישראלי"
@@ -154,8 +156,8 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">כתובת למשלוח</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="רחוב, מספר, עיר"
@@ -183,14 +185,14 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
               </div>
             </div>
 
-            <button 
+            <button
               onClick={handleWhatsAppCheckout}
               className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-4 rounded-xl shadow-md transition-all hover:shadow-lg flex items-center justify-center gap-2"
             >
               <MessageCircle className="w-5 h-5" />
               שליחת הזמנה ב-WhatsApp
             </button>
-            
+
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
               <ShieldCheck className="w-4 h-4" />
               <span>תשלום מאובטח ומוצפן</span>
@@ -210,15 +212,15 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">להסיר מהסל?</h3>
               <p className="text-gray-500 mb-6 text-sm">האם את בטוחה שאת רוצה להסיר פריט זה מסל הקניות?</p>
-              
+
               <div className="flex gap-3 w-full">
-                <button 
+                <button
                   onClick={() => setItemToRemove(null)}
                   className="flex-1 py-2.5 rounded-lg border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
                 >
                   ביטול
                 </button>
-                <button 
+                <button
                   onClick={confirmRemove}
                   className="flex-1 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200"
                 >
