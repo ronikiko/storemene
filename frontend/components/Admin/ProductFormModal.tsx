@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Category } from '../../types';
-import { X, Save } from 'lucide-react';
+import { X, Save, Loader2 } from 'lucide-react';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, productToEd
     reviews: 0,
     isNew: false,
   });
+  const [ isSubmitting, setIsSubmitting ] = useState(false);
 
   useEffect(() => {
     if (productToEdit) {
@@ -55,10 +56,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, productToEd
     };
 
     try {
+      setIsSubmitting(true);
       await onSave(productPayload);
       onClose();
     } catch (error) {
       console.error('Failed to save product:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -151,10 +155,20 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, productToEd
 
           <button
             type="submit"
-            className="w-full bg-black text-white font-bold py-3 rounded-xl mt-4 flex items-center justify-center gap-2 hover:bg-gray-800"
+            disabled={isSubmitting}
+            className="w-full bg-black text-white font-bold py-3 rounded-xl mt-4 flex items-center justify-center gap-2 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-5 h-5" />
-            {productToEdit ? 'שמור שינויים' : 'צור מוצר'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                שומר...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                {productToEdit ? 'שמור שינויים' : 'צור מוצר'}
+              </>
+            )}
           </button>
         </form>
       </div>

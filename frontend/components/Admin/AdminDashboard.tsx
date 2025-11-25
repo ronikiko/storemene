@@ -5,6 +5,7 @@ import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
 import PriceListFormModal from './PriceListFormModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import { useToast } from '../../context/ToastContext';
 
 interface AdminDashboardProps {
@@ -72,11 +73,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [ isPriceListModalOpen, setIsPriceListModalOpen ] = useState(false);
   const [ editingPriceList, setEditingPriceList ] = useState<PriceList | null>(null);
 
+  // Delete Confirmation Modal State
+  const [ deleteConfirm, setDeleteConfirm ] = useState<{
+    isOpen: boolean;
+    type: 'product' | 'category' | 'customer' | 'pricelist' | null;
+    id: number | string | null;
+    name: string;
+  }>({ isOpen: false, type: null, id: null, name: '' });
+
   // Handlers
   const handleSaveProduct = (p: Product) => editingProduct ? onEditProduct(p) : onAddProduct(p);
   const handleSaveCategory = (c: Category) => editingCategory ? onEditCategory(c) : onAddCategory(c);
   const handleSaveCustomer = (c: Customer) => editingCustomer ? onEditCustomer(c) : onAddCustomer(c);
   const handleSavePriceList = (pl: PriceList) => editingPriceList ? onEditPriceList(pl) : onAddPriceList(pl);
+
+  // Delete Handlers with Confirmation
+  const handleDeleteClick = (type: 'product' | 'category' | 'customer' | 'pricelist', id: number | string, name: string) => {
+    setDeleteConfirm({ isOpen: true, type, id, name });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteConfirm.id || !deleteConfirm.type) return;
+
+    switch (deleteConfirm.type) {
+      case 'product':
+        onDeleteProduct(deleteConfirm.id as number);
+        break;
+      case 'category':
+        onDeleteCategory(deleteConfirm.id as string);
+        break;
+      case 'customer':
+        onDeleteCustomer(deleteConfirm.id as string);
+        break;
+      case 'pricelist':
+        onDeletePriceList(deleteConfirm.id as string);
+        break;
+    }
+
+    setDeleteConfirm({ isOpen: false, type: null, id: null, name: '' });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirm({ isOpen: false, type: null, id: null, name: '' });
+  };
 
   // --- CSV Export Logic ---
   const handleExport = () => {
@@ -252,7 +291,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex items-center gap-3">
             {/* Show Prices Toggle */}
             <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-              <DollarSign className="w-4 h-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-700 hidden md:inline">הצג מחירים:</span>
               <button
                 onClick={() => onUpdateShowPrices(!showPrices)}
@@ -358,7 +396,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => onDeleteProduct(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => handleDeleteClick('product', product.id, product.title)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
@@ -392,7 +430,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
                             <button onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                            <button onClick={() => onDeleteCategory(cat.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteClick('category', cat.id, cat.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -440,7 +478,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <LinkIcon className="w-4 h-4" />
                           </button>
                           <button onClick={() => { setEditingCustomer(customer); setIsCustomerModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => onDeleteCustomer(customer.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => handleDeleteClick('customer', customer.id, customer.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
@@ -468,7 +506,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button onClick={() => { setEditingPriceList(pl); setIsPriceListModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => onDeletePriceList(pl.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => handleDeleteClick('pricelist', pl.id, pl.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
@@ -506,6 +544,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         products={products}
         onClose={() => setIsPriceListModalOpen(false)}
         onSave={handleSavePriceList}
+      />
+
+      <DeleteConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title={`מחיקת ${deleteConfirm.type === 'product' ? 'מוצר' : deleteConfirm.type === 'category' ? 'קטגוריה' : deleteConfirm.type === 'customer' ? 'לקוח' : 'מחירון'}`}
+        message="פעולה זו אינה ניתנת לביטול. האם אתה בטוח?"
+        itemName={deleteConfirm.name}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
     </div>
   );
