@@ -50,8 +50,9 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col md:flex-row max-h-[90vh] md:h-auto group/modal">
+      <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col md:flex-row max-h-[90vh] group/modal">
 
+        {/* <div className="w-full md:relative"> */}
         {/* Navigation Buttons */}
         <button
           onClick={(e) => { e.stopPropagation(); onPrev(); }}
@@ -76,13 +77,15 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
         >
           <X className="w-5 h-5" />
         </button>
+        {/* </div> */}
+
 
         {/* Image Section */}
-        <div className="w-full md:w-1/2 bg-gray-50 h-64 md:h-auto relative group">
+        <div className="w-full md:w-1/2 bg-gray-50 flex-1 md:flex-none md:h-auto relative group">
           <img
             src={product.imageUrl}
             alt={product.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
           {product.discount && (
             <div className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
