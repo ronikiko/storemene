@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const [ customers, setCustomers ] = useState<Customer[]>([]);
   const [ priceLists, setPriceLists ] = useState<PriceList[]>([]);
   const [ showPrices, setShowPrices ] = useState(true);
+  const { success } = useToast();
 
   // --- Loading & Error States ---
   const [ isLoading, setIsLoading ] = useState(true);
@@ -66,6 +67,7 @@ const App: React.FC = () => {
   const [ selectedPriceRange, setSelectedPriceRange ] = useState<string | null>(null);
   const [ showOnlyNew, setShowOnlyNew ] = useState(false);
   const [ showOnlySale, setShowOnlySale ] = useState(false);
+  const [ cartAnimating, setCartAnimating ] = useState(false);
 
   // --- Fetch Data from Backend ---
   useEffect(() => {
@@ -122,15 +124,21 @@ const App: React.FC = () => {
     const info = getEffectiveProductInfo(product);
     const itemToAdd = { ...product, price: info.price }; // Use effective price for cart
 
+    // Trigger cart animation
+    setCartAnimating(true);
+    setTimeout(() => setCartAnimating(false), 600);
+
     setCartItems(prev => {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
+        success(`${product.title} - נוסף!`);
         return prev.map(item =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
+      success(`${product.title} - נוסף לסל!`);
       return [ ...prev, { ...itemToAdd, quantity } ];
     });
   };
@@ -365,6 +373,7 @@ const App: React.FC = () => {
         onCartClick={() => setCurrentView('checkout')}
         onLogoClick={() => setCurrentView('home')}
         onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
+        cartAnimating={cartAnimating}
       />
       <CartPage cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={() => setCurrentView('home')} showPrices={showPrices} />
     </div>
@@ -377,6 +386,7 @@ const App: React.FC = () => {
         onCartClick={() => setCurrentView('checkout')}
         onLogoClick={() => setCurrentView('home')}
         onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
+        cartAnimating={cartAnimating}
       />
 
       <div className="container mx-auto px-4 mt-6 mb-8">
@@ -459,7 +469,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <ToastProvider>
+    <>
       {/* Loading State */}
       {isLoading && (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -528,7 +538,7 @@ const App: React.FC = () => {
           )}
         </>
       )}
-    </ToastProvider>
+    </>
   );
 };
 

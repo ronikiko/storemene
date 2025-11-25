@@ -6,9 +6,10 @@ interface HeaderProps {
   onCartClick?: () => void;
   onLogoClick?: () => void;
   onUserClick?: () => void;
+  cartAnimating?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onUserClick }) => {
+const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onUserClick, cartAnimating = false }) => {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm border-b border-coffee-100">
       {/* Top Banner */}
@@ -59,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
               <User className="w-6 h-6" />
             </button>
             <button
-              className="text-coffee-700 hover:text-coffee-900 p-2 hover:bg-coffee-50 rounded-full transition-colors relative"
+              className={`text-coffee-700 hover:text-coffee-900 p-2 hover:bg-coffee-50 rounded-full transition-colors relative ${cartAnimating ? 'animate-bounce' : ''}`}
               onClick={onCartClick}
             >
               <ShoppingBag className="w-6 h-6" />
