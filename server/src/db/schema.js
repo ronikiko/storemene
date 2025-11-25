@@ -44,3 +44,9 @@ export const priceListItems = pgTable('price_list_items', {
   productId: integer('product_id').notNull(),
   price: real('price').notNull(),
 });
+
+// Settings table
+export const settings = pgTable('settings', {
+  id: text('id').primaryKey(),
+  value: text('value').notNull(),
+});

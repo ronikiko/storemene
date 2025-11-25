@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Product, Category, Customer, PriceList } from '../../types';
-import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
@@ -29,6 +29,9 @@ interface AdminDashboardProps {
   onEditPriceList: (pl: PriceList) => void;
   onDeletePriceList: (id: string) => void;
 
+  showPrices: boolean;
+  onUpdateShowPrices: (value: boolean) => void;
+
   onLogout: () => void;
   onGoHome: () => void;
 }
@@ -49,6 +52,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddCategory, onEditCategory, onDeleteCategory,
   onAddCustomer, onEditCustomer, onDeleteCustomer,
   onAddPriceList, onEditPriceList, onDeletePriceList,
+  showPrices, onUpdateShowPrices,
   onLogout, onGoHome
 }) => {
   const [ activeTab, setActiveTab ] = useState<'products' | 'categories' | 'customers' | 'pricelists'>('products');
@@ -246,6 +250,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <h1 className="text-2xl font-black">ניהול חנות</h1>
           </div>
           <div className="flex items-center gap-3">
+            {/* Show Prices Toggle */}
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+              <DollarSign className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700 hidden md:inline">הצג מחירים:</span>
+              <button
+                onClick={() => onUpdateShowPrices(!showPrices)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${showPrices ? 'bg-green-500' : 'bg-gray-300'}`}
+              >
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${showPrices ? 'right-1' : 'right-6'}`} />
+              </button>
+            </div>
             <button onClick={onGoHome} className="text-sm font-medium text-gray-600 hover:text-black hidden md:block">
               חזרה לאתר
             </button>

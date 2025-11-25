@@ -6,9 +6,10 @@ interface ProductTableProps {
     products: (Product & { isSpecialPrice?: boolean })[];
     onAddToCart: (product: Product) => void;
     onQuickView: (product: Product) => void;
+    showPrices?: boolean;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQuickView }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQuickView, showPrices = true }) => {
     return (
         <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-coffee-100">
             <table className="w-full text-right">
@@ -16,7 +17,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQu
                     <tr>
                         <th className="px-3 md:px-6 py-4 rounded-tr-2xl">מוצר</th>
                         <th className="hidden md:table-cell px-6 py-4">קטגוריה</th>
-                        <th className="px-3 md:px-6 py-4">מחיר</th>
+                        {showPrices && <th className="px-3 md:px-6 py-4">מחיר</th>}
                         <th className="px-3 md:px-6 py-4 rounded-tl-2xl">פעולות</th>
                     </tr>
                 </thead>
@@ -37,18 +38,20 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQu
                             <td className="hidden md:table-cell px-6 py-4 text-sm text-coffee-700">
                                 {product.category}
                             </td>
-                            <td className="px-3 md:px-6 py-4">
-                                <div className="flex flex-col items-start">
-                                    <span className={`font-bold ${product.isSpecialPrice ? 'text-green-600' : 'text-coffee-900'}`}>
-                                        ₪{product.price.toFixed(2)}
-                                    </span>
-                                    {product.originalPrice && (
-                                        <span className="text-xs text-coffee-300 line-through">
-                                            ₪{product.originalPrice.toFixed(2)}
+                            {showPrices && (
+                                <td className="px-3 md:px-6 py-4">
+                                    <div className="flex flex-col items-start">
+                                        <span className={`font-bold ${product.isSpecialPrice ? 'text-green-600' : 'text-coffee-900'}`}>
+                                            ₪{product.price.toFixed(2)}
                                         </span>
-                                    )}
-                                </div>
-                            </td>
+                                        {product.originalPrice && (
+                                            <span className="text-xs text-coffee-300 line-through">
+                                                ₪{product.originalPrice.toFixed(2)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </td>
+                            )}
                             <td className="px-3 md:px-6 py-4">
                                 <div className="flex items-center gap-2">
                                     <button

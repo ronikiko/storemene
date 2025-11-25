@@ -6,9 +6,10 @@ interface ProductCardProps {
   product: Product & { isSpecialPrice?: boolean };
   onAddToCart: (product: Product) => void;
   onQuickView?: (product: Product) => void;
+  showPrices?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onQuickView }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onQuickView, showPrices = true }) => {
   return (
     <div className="group flex flex-col relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-coffee-50">
       {/* Image Container */}
@@ -78,12 +79,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onQuick
           </h3>
         </div>
 
-        <div className="flex items-baseline gap-2 mt-auto">
-          <span className={`text-lg font-black ${product.isSpecialPrice ? 'text-green-600' : 'text-coffee-900'}`}>₪{product.price.toFixed(2)}</span>
-          {product.originalPrice && (
-            <span className="text-xs text-coffee-300 line-through font-medium">₪{product.originalPrice.toFixed(2)}</span>
-          )}
-        </div>
+        {showPrices && (
+          <div className="flex items-baseline gap-2 mt-auto">
+            <span className={`text-lg font-black ${product.isSpecialPrice ? 'text-green-600' : 'text-coffee-900'}`}>₪{product.price.toFixed(2)}</span>
+            {product.originalPrice && (
+              <span className="text-xs text-coffee-300 line-through font-medium">₪{product.originalPrice.toFixed(2)}</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

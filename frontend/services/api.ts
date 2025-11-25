@@ -1,4 +1,5 @@
 const API_BASE_URL = 'https://storemene.vercel.app/api';
+// const API_BASE_URL = 'http://localhost:3001/api';
 
 // Helper function for API calls
 async function apiCall(endpoint: string, options: RequestInit = {}) {
@@ -95,5 +96,15 @@ export const authApi = {
     authenticateAdmin: (password: string) => apiCall('/auth/admin', {
         method: 'POST',
         body: JSON.stringify({ password }),
+    }),
+};
+
+// Settings API
+export const settingsApi = {
+    getAll: () => apiCall('/settings'),
+    getById: (id: string) => apiCall(`/settings/${id}`),
+    update: (id: string, value: string) => apiCall(`/settings/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ value }),
     }),
 };

@@ -11,7 +11,7 @@ import Pagination from './components/Pagination';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { Product, CartItem, Category, Customer, PriceList } from './types';
 import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter } from 'lucide-react';
-import { productsApi, categoriesApi, customersApi, priceListsApi, authApi } from './services/api';
+import { productsApi, categoriesApi, customersApi, priceListsApi, authApi, settingsApi } from './services/api';
 
 const App: React.FC = () => {
   // --- Data State (From Backend) ---
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [ categories, setCategories ] = useState<Category[]>([]);
   const [ customers, setCustomers ] = useState<Customer[]>([]);
   const [ priceLists, setPriceLists ] = useState<PriceList[]>([]);
+  const [ showPrices, setShowPrices ] = useState(true);
 
   // --- Loading & Error States ---
   const [ isLoading, setIsLoading ] = useState(true);
@@ -71,17 +72,25 @@ const App: React.FC = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [ productsData, categoriesData, customersData, priceListsData ] = await Promise.all([
+        const [ productsData, categoriesData, customersData, priceListsData, settingsData ] = await Promise.all([
           productsApi.getAll(),
           categoriesApi.getAll(),
           customersApi.getAll(),
           priceListsApi.getAll(),
+          settingsApi.getAll(),
         ]);
 
         setProducts(productsData);
         setCategories(categoriesData);
         setCustomers(customersData);
         setPriceLists(priceListsData);
+
+        // Load show_prices setting
+        const showPricesSetting = settingsData.find((s: any) => s.id === 'show_prices');
+        if (showPricesSetting) {
+          setShowPrices(showPricesSetting.value === 'true');
+        }
+
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -148,6 +157,16 @@ const App: React.FC = () => {
     setShowOnlySale(false);
 
     setCurrentPage(1);
+  };
+
+  // --- Settings Handler ---
+  const handleUpdateShowPrices = async (value: boolean) => {
+    try {
+      await settingsApi.update('show_prices', value.toString());
+      setShowPrices(value);
+    } catch (err) {
+      console.error('Failed to update show_prices setting:', err);
+    }
   };
 
   // --- CRUD Handlers (with API calls) ---
@@ -331,6 +350,8 @@ const App: React.FC = () => {
         onAddCategory={handleAddCategory} onEditCategory={handleEditCategory} onDeleteCategory={handleDeleteCategory}
         onAddCustomer={handleAddCustomer} onEditCustomer={handleEditCustomer} onDeleteCustomer={handleDeleteCustomer}
         onAddPriceList={handleAddPriceList} onEditPriceList={handleEditPriceList} onDeletePriceList={handleDeletePriceList}
+        showPrices={showPrices}
+        onUpdateShowPrices={handleUpdateShowPrices}
         onLogout={() => { setIsAdminAuthenticated(false); setCurrentView('home'); }}
         onGoHome={() => setCurrentView('home')}
       />
@@ -345,7 +366,7 @@ const App: React.FC = () => {
         onLogoClick={() => setCurrentView('home')}
         onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
       />
-      <CartPage cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={() => setCurrentView('home')} />
+      <CartPage cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={() => setCurrentView('home')} showPrices={showPrices} />
     </div>
   );
 
@@ -404,6 +425,7 @@ const App: React.FC = () => {
                       product={getEffectiveProductInfo(product)}
                       onAddToCart={handleAddToCart}
                       onQuickView={setQuickViewProduct}
+                      showPrices={showPrices}
                     />
                   ))}
                 </div>
@@ -412,6 +434,7 @@ const App: React.FC = () => {
                   products={filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(p => getEffectiveProductInfo(p))}
                   onAddToCart={handleAddToCart}
                   onQuickView={setQuickViewProduct}
+                  showPrices={showPrices}
                 />
               )}
 
@@ -500,6 +523,7 @@ const App: React.FC = () => {
               onAddToCart={handleAddToCart}
               onNext={handleNextProduct}
               onPrev={handlePrevProduct}
+              showPrices={showPrices}
             />
           )}
         </>

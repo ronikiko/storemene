@@ -6,6 +6,7 @@ import categoriesRouter from './routes/categories.js';
 import customersRouter from './routes/customers.js';
 import priceListsRouter from './routes/priceLists.js';
 import authRouter from './routes/auth.js';
+import settingsRouter from './routes/settings.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/price-lists', priceListsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/settings', settingsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

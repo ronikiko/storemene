@@ -9,11 +9,12 @@ interface QuickViewModalProps {
   onAddToCart: (product: Product, quantity: number) => void;
   onNext: () => void;
   onPrev: () => void;
+  showPrices?: boolean;
 }
 
 const PACK_OPTIONS = [ 1, 2, 3, 5, 10 ];
 
-const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClose, onAddToCart, onNext, onPrev }) => {
+const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClose, onAddToCart, onNext, onPrev, showPrices = true }) => {
   const [ selectedPack, setSelectedPack ] = useState<number>(1);
   const [ isAdding, setIsAdding ] = useState(false);
 
@@ -57,7 +58,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
           className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 bg-white/80 hover:bg-white text-coffee-900 rounded-full shadow-lg hover:scale-110 transition-all opacity-0 group-hover/modal:opacity-100"
           aria-label="Previous product"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronLeft className="w-6 h-6" />
         </button>
 
         <button
@@ -65,7 +66,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
           className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 bg-white/80 hover:bg-white text-coffee-900 rounded-full shadow-lg hover:scale-110 transition-all opacity-0 group-hover/modal:opacity-100"
           aria-label="Next product"
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronRight className="w-6 h-6" />
         </button>
 
         {/* Close Button */}
@@ -85,35 +86,37 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
           />
           {product.discount && (
             <div className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
-              SALE -{product.discount}%
+              מחיר מיוחד -{product.discount}%
             </div>
           )}
         </div>
 
         {/* Details Section */}
-        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
+        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col overflow-y-auto custom-scrollbar justify-between">
           <div className="mb-1 text-gray-500 text-sm font-medium uppercase tracking-wide">{product.category}</div>
           <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 leading-tight font-serif italic">{product.title}</h2>
 
           {/* Price & Rating */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-baseline gap-3">
-              <span className="text-2xl font-bold text-black">₪{product.price.toFixed(2)}</span>
-              {product.originalPrice && (
-                <span className="text-lg text-gray-400 line-through decoration-1">₪{product.originalPrice.toFixed(2)}</span>
-              )}
+          {showPrices && (
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-baseline gap-3">
+                <span className="text-2xl font-bold text-black">₪{product.price.toFixed(2)}</span>
+                {product.originalPrice && (
+                  <span className="text-lg text-gray-400 line-through decoration-1">₪{product.originalPrice.toFixed(2)}</span>
+                )}
+              </div>
+              {/* <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-sm font-bold text-gray-800">{product.rating}</span>
+                <span className="text-xs text-gray-400">({product.reviews})</span>
+              </div> */}
             </div>
-            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-bold text-gray-800">{product.rating}</span>
-              <span className="text-xs text-gray-400">({product.reviews})</span>
-            </div>
-          </div>
+          )}
 
-          <hr className="border-gray-100 mb-6" />
+          <hr className="border-gray-200 mb-6" />
 
           {/* Pack/Quantity Selector */}
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <div className="flex justify-between mb-2">
               <span className="text-sm font-bold text-gray-900">כמות במארז (יחידות)</span>
             </div>
@@ -131,7 +134,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Action Button */}
           <button
@@ -145,12 +148,11 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
             {isAdding ? (
               <>
                 <Check className="w-5 h-5" />
-                הוסף לסל!
+                נוסף
               </>
             ) : (
               <>
-                <ShoppingCart className="w-5 h-5" />
-                הוספה לסל הקניות
+                הוספה למועדפים
               </>
             )}
           </button>
@@ -158,12 +160,12 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
           {/* Extra Info */}
           <div className="mt-6 grid grid-cols-2 gap-4">
             <div className="flex items-center gap-2 text-gray-600">
-              <Truck className="w-4 h-4" />
-              <span className="text-xs">משלוח מהיר עד הבית</span>
+              {/* <Truck className="w-4 h-4" /> */}
+              <span className="text-xs"></span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-xs">אחריות מלאה לשנה</span>
+              {/* <ShieldCheck className="w-4 h-4" />
+              <span className="text-xs">אחריות מלאה לשנה</span> */}
             </div>
           </div>
 

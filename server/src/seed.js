@@ -1,5 +1,5 @@
 import { db } from './db/index.js';
-import { products, categories, priceLists, priceListItems, customers } from './db/schema.js';
+import { products, categories, priceLists, priceListItems, customers, settings } from './db/schema.js';
 
 console.log('Seeding database...');
 
@@ -195,6 +195,14 @@ const customersData = [
 
 await db.insert(customers).values(customersData);
 console.log(`✓ Seeded ${customersData.length} customers`);
+
+// Seed Settings
+const settingsData = [
+  { id: 'show_prices', value: 'true' }
+];
+
+await db.insert(settings).values(settingsData);
+console.log(`✓ Seeded ${settingsData.length} settings`);
 
 console.log('\n✅ Database seeded successfully!');
 process.exit(0);

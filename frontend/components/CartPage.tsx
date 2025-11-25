@@ -8,9 +8,10 @@ interface CartPageProps {
   onUpdateQuantity: (id: number, delta: number) => void;
   onRemoveItem: (id: number) => void;
   onBack: () => void;
+  showPrices?: boolean;
 }
 
-const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onBack }) => {
+const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onBack, showPrices = true }) => {
   const [ customerName, setCustomerName ] = useState('');
   const [ address, setAddress ] = useState('');
   const [ itemToRemove, setItemToRemove ] = useState<number | null>(null);
@@ -61,14 +62,14 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
           <MessageCircle className="w-8 h-8 text-gray-400" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">סל הקניות שלך ריק</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">לא נמצאו מוצרים</h2>
         <p className="text-gray-500 mb-8">נראה שעדיין לא בחרת פריטים. בואי נמצא לך משהו מהמם!</p>
         <button
           onClick={onBack}
           className="bg-black text-white px-8 py-3 rounded-full font-bold hover:bg-gray-800 transition-all flex items-center gap-2"
         >
           <ArrowRight className="w-4 h-4" />
-          חזרה לחנות
+          חזרה לקטלוג
         </button>
       </div>
     );
@@ -78,10 +79,10 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
     <div className="container mx-auto px-4 py-8 max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-black mb-6 text-sm font-medium">
         <ArrowRight className="w-4 h-4" />
-        חזרה לקניות
+        חזרה לקטלוג
       </button>
 
-      <h1 className="text-3xl font-black font-serif italic mb-8">סל הקניות שלי</h1>
+      <h1 className="text-3xl font-black font-serif italic mb-8">רשימת המוצרים</h1>
 
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Cart Items List */}
@@ -124,12 +125,14 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg">₪{(item.price * item.quantity).toFixed(2)}</div>
-                      {item.quantity > 1 && (
-                        <div className="text-xs text-gray-500">₪{item.price} ליחידה</div>
-                      )}
-                    </div>
+                    {showPrices && (
+                      <div className="text-right">
+                        <div className="font-bold text-lg">₪{(item.price * item.quantity).toFixed(2)}</div>
+                        {item.quantity > 1 && (
+                          <div className="text-xs text-gray-500">₪{item.price} ליחידה</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -166,24 +169,26 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
               </div>
             </div>
 
-            <div className="space-y-3 border-t border-gray-100 pt-4 mb-6">
-              <div className="flex justify-between text-gray-600">
-                <span>סכום ביניים</span>
-                <span>₪{subtotal.toFixed(2)}</span>
+            {showPrices && (
+              <div className="space-y-3 border-t border-gray-100 pt-4 mb-6">
+                <div className="flex justify-between text-gray-600">
+                  <span>סכום ביניים</span>
+                  <span>₪{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>משלוח</span>
+                  {shippingCost === 0 ? (
+                    <span className="text-green-600 font-medium">חינם</span>
+                  ) : (
+                    <span>₪{shippingCost}</span>
+                  )}
+                </div>
+                <div className="flex justify-between text-xl font-black mt-4 pt-4 border-t border-black/5">
+                  <span>סה"כ לתשלום</span>
+                  <span>₪{total.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>משלוח</span>
-                {shippingCost === 0 ? (
-                  <span className="text-green-600 font-medium">חינם</span>
-                ) : (
-                  <span>₪{shippingCost}</span>
-                )}
-              </div>
-              <div className="flex justify-between text-xl font-black mt-4 pt-4 border-t border-black/5">
-                <span>סה"כ לתשלום</span>
-                <span>₪{total.toFixed(2)}</span>
-              </div>
-            </div>
+            )}
 
             <button
               onClick={handleWhatsAppCheckout}
