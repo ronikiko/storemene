@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Lock, ArrowRight } from 'lucide-react';
-import { useToast } from '../../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 interface AdminLoginProps {
   onLogin: () => void;

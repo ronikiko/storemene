@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { Customer, PriceList } from '../../types';
-import { useToast } from '../../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 interface CustomerFormModalProps {
   isOpen: boolean;

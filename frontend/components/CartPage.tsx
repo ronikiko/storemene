@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CartItem } from '../types';
 import { Trash2, Plus, Minus, ArrowRight, MessageCircle, ShieldCheck, AlertTriangle, X } from 'lucide-react';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../context/ToastContext';
 
 interface CartPageProps {
   cartItems: CartItem[];

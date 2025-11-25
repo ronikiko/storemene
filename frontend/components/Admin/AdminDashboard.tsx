@@ -5,7 +5,7 @@ import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
 import PriceListFormModal from './PriceListFormModal';
-import { useToast } from '../../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 interface AdminDashboardProps {
   products: Product[];
