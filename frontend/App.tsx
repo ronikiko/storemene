@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
 import CategoryNav from './components/CategoryNav';
 import ProductCard from './components/ProductCard';
 import QuickViewModal from './components/QuickViewModal';
@@ -55,14 +54,7 @@ const App: React.FC = () => {
     return { ...product, price: effectivePrice, originalPrice: isSpecialPrice ? product.price : product.originalPrice, isSpecialPrice };
   };
 
-  // --- Filter State ---
-  const maxGlobalPrice = useMemo(() => {
-    if (products.length === 0) return 100;
-    return Math.ceil(Math.max(...products.map(p => p.price)));
-  }, [ products ]);
-
   const [ selectedCategory, setSelectedCategory ] = useState<string | null>(null);
-  const [ isFilterOpen, setIsFilterOpen ] = useState(false); // Kept for backward compat if needed, but mostly replaced
   const [ isMobileSidebarOpen, setIsMobileSidebarOpen ] = useState(false);
   const [ viewMode, setViewMode ] = useState<'grid' | 'table'>('grid');
   const [ currentPage, setCurrentPage ] = useState(1);
@@ -156,7 +148,6 @@ const App: React.FC = () => {
     setShowOnlySale(false);
 
     setCurrentPage(1);
-    setIsFilterOpen(false);
   };
 
   // --- CRUD Handlers (with API calls) ---
@@ -297,16 +288,6 @@ const App: React.FC = () => {
     if (showOnlyNew && !product.isNew) return false;
     if (showOnlySale && (!product.discount || product.discount <= 0)) return false;
 
-    // 3. Price Range
-    const effectiveInfo = getEffectiveProductInfo(product);
-    const price = effectiveInfo.price;
-
-    if (selectedPriceRange) {
-      if (selectedPriceRange === 'under-50' && price >= 50) return false;
-      if (selectedPriceRange === '50-100' && (price < 50 || price >= 100)) return false;
-      if (selectedPriceRange === '100-200' && (price < 100 || price >= 200)) return false;
-      if (selectedPriceRange === '200-plus' && price < 200) return false;
-    }
 
     return true;
   }).sort((a, b) => {
@@ -386,74 +367,17 @@ const App: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8 flex gap-8">
-
-        {/* Desktop Sidebar */}
-        <div className="hidden md:block">
-          <Sidebar
-            selectedPriceRange={selectedPriceRange}
-            onPriceRangeChange={setSelectedPriceRange}
-            showOnlyNew={showOnlyNew}
-            onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
-            showOnlySale={showOnlySale}
-            onToggleSale={() => setShowOnlySale(!showOnlySale)}
-          />
-        </div>
-
-        {/* Mobile Sidebar Drawer */}
-        {isMobileSidebarOpen && (
-          <div className="fixed inset-0 z-50 flex md:hidden">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)} />
-            <div className="relative bg-white w-4/5 max-w-xs h-full shadow-2xl p-6 overflow-y-auto animate-in slide-in-from-right">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-coffee-900">סינון</h2>
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 text-coffee-500">
-                  <span className="sr-only">סגור</span>
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-              <Sidebar
-                selectedPriceRange={selectedPriceRange}
-                onPriceRangeChange={setSelectedPriceRange}
-                showOnlyNew={showOnlyNew}
-                onToggleNew={() => setShowOnlyNew(!showOnlyNew)}
-                showOnlySale={showOnlySale}
-                onToggleSale={() => setShowOnlySale(!showOnlySale)}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Main Content */}
-        <main className="flex-1 min-h-[600px]">
+        <main className="flex-1 min-h-[600px] min-w-0">
           {/* Top Toolbar */}
-          <div className="bg-white p-4 rounded-xl border border-coffee-100 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="bg-white p-4 rounded-xl border border-coffee-100 shadow-sm mb-6 flex md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-              <button
-                onClick={() => setIsMobileSidebarOpen(true)}
-                className="md:hidden flex items-center gap-2 text-coffee-900 font-bold"
-              >
-                <Filter className="w-5 h-5" />
-                <span>סינון</span>
-              </button>
-              <span className="text-sm text-coffee-500 font-medium hidden md:block">
+              <span className="text-sm text-coffee-500 font-medium md:block">
                 {filteredProducts.length} מוצרים
               </span>
             </div>
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-coffee-700 hidden md:inline">מיון:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-coffee-50 border-none rounded-lg text-sm py-2 pl-8 pr-4 text-coffee-900 font-medium focus:ring-1 focus:ring-coffee-200"
-                >
-                  <option value="default">מומלץ</option>
-                  <option value="price-asc">מחיר: נמוך לגבוה</option>
-                  <option value="price-desc">מחיר: גבוה לנמוך</option>
-                  <option value="name-asc">שם: א-ת</option>
-                </select>
-              </div>
-              <div className="flex bg-coffee-50 rounded-lg p-1">
+            <div className="flex items-center gap-4 w-full md:w-auto  justify-end">
+              <div className="flex justify-end items-center gap-2 bg-coffee-50 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}

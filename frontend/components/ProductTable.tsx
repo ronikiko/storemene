@@ -14,30 +14,30 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQu
             <table className="w-full text-right">
                 <thead className="bg-coffee-50 text-coffee-900 text-sm font-bold">
                     <tr>
-                        <th className="px-6 py-4 rounded-tr-2xl">מוצר</th>
-                        <th className="px-6 py-4">קטגוריה</th>
-                        <th className="px-6 py-4">מחיר</th>
-                        <th className="px-6 py-4 rounded-tl-2xl">פעולות</th>
+                        <th className="px-3 md:px-6 py-4 rounded-tr-2xl">מוצר</th>
+                        <th className="hidden md:table-cell px-6 py-4">קטגוריה</th>
+                        <th className="px-3 md:px-6 py-4">מחיר</th>
+                        <th className="px-3 md:px-6 py-4 rounded-tl-2xl">פעולות</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-coffee-50">
                     {products.map((product) => (
                         <tr key={product.id} className="group hover:bg-coffee-50/50 transition-colors">
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-4 cursor-pointer" onClick={() => onQuickView(product)}>
-                                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                            <td className="px-3 md:px-6 py-4">
+                                <div className="flex items-center gap-2 md:gap-4 cursor-pointer" onClick={() => onQuickView(product)}>
+                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                         <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-coffee-900 group-hover:text-coffee-600 transition-colors">{product.title}</h4>
+                                        <h4 className="font-bold text-sm md:text-base text-coffee-900 group-hover:text-coffee-600 transition-colors line-clamp-2 md:line-clamp-none">{product.title}</h4>
                                         {product.isNew && <span className="text-[10px] bg-coffee-900 text-white px-1.5 py-0.5 rounded-full">חדש</span>}
                                     </div>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 text-sm text-coffee-700">
+                            <td className="hidden md:table-cell px-6 py-4 text-sm text-coffee-700">
                                 {product.category}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 md:px-6 py-4">
                                 <div className="flex flex-col items-start">
                                     <span className={`font-bold ${product.isSpecialPrice ? 'text-green-600' : 'text-coffee-900'}`}>
                                         ₪{product.price.toFixed(2)}
@@ -49,7 +49,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQu
                                     )}
                                 </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 md:px-6 py-4">
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => onQuickView(product)}
