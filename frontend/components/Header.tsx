@@ -30,20 +30,6 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
             </h1>
           </div>
 
-          {/* Center: Search */}
-          <div className="flex-1 max-w-xl hidden md:block">
-            <div className="relative group">
-              <input
-                type="text"
-                placeholder="חיפוש מוצרים..."
-                className="w-full bg-coffee-50 text-coffee-900 rounded-full py-2.5 px-5 pr-11 focus:outline-none focus:ring-2 focus:ring-coffee-200 transition-all placeholder:text-coffee-400 text-sm font-medium"
-              />
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-coffee-400 group-focus-within:text-coffee-600 transition-colors">
-                <Search className="w-5 h-5" />
-              </div>
-            </div>
-          </div>
-
           {/* Right: Icons */}
           <div className="flex items-center gap-3 sm:gap-5">
             <button className="text-coffee-700 hover:text-coffee-900 md:hidden p-2 hover:bg-coffee-50 rounded-full transition-colors">
@@ -70,20 +56,6 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
                 </span>
               )}
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Search Bar */}
-      <div className="md:hidden px-4 pb-4">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="חיפוש..."
-            className="w-full bg-coffee-50 text-coffee-900 rounded-xl py-3 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-coffee-200 text-sm font-medium"
-          />
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-coffee-400">
-            <Search className="w-4 h-4" />
           </div>
         </div>
       </div>
