@@ -268,7 +268,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       });
       alert('ייבוא הושלם בהצלחה!');
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   };
 
   return (
