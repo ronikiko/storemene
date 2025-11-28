@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Product, Category, Customer, PriceList } from '../../types';
 import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
@@ -60,6 +60,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { success, error, info } = useToast();
 
+  // Pagination States
+  const [ currentPage, setCurrentPage ] = useState(1);
+  const [ itemsPerPage, setItemsPerPage ] = useState(20);
+
   // Modal States
   const [ isProductModalOpen, setIsProductModalOpen ] = useState(false);
   const [ editingProduct, setEditingProduct ] = useState<Product | null>(null);
@@ -80,6 +84,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     id: number | string | null;
     name: string;
   }>({ isOpen: false, type: null, id: null, name: '' });
+
+  // Reset pagination when switching tabs or changing items per page
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [ activeTab, itemsPerPage ]);
 
   // Handlers
   const handleSaveProduct = (p: Product) => editingProduct ? onEditProduct(p) : onAddProduct(p);
@@ -117,6 +126,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setDeleteConfirm({ isOpen: false, type: null, id: null, name: '' });
   };
 
+  // --- Pagination Logic ---
+  const getCurrentData = () => {
+    let data: any[] = [];
+    switch (activeTab) {
+      case 'products':
+        data = products;
+        break;
+      case 'categories':
+        data = categories;
+        break;
+      case 'customers':
+        data = customers;
+        break;
+      case 'pricelists':
+        data = priceLists;
+        break;
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return {
+      data: data.slice(startIndex, endIndex),
+      total: data.length,
+      totalPages: Math.ceil(data.length / itemsPerPage),
+      startIndex: startIndex + 1,
+      endIndex: Math.min(endIndex, data.length)
+    };
+  };
+
+  const paginationInfo = getCurrentData();
+  const paginatedProducts = activeTab === 'products' ? paginationInfo.data : products;
+  const paginatedCategories = activeTab === 'categories' ? paginationInfo.data : categories;
+  const paginatedCustomers = activeTab === 'customers' ? paginationInfo.data : customers;
+  const paginatedPriceLists = activeTab === 'pricelists' ? paginationInfo.data : priceLists;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+  };
+
+
   // --- CSV Export Logic ---
   const handleExport = () => {
     let data: any[] = [];
@@ -148,7 +201,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const allKeys = Array.from(new Set(data.flatMap(Object.keys)));
 
-    // Create CSV content
+    // Create CSV content with UTF-8 BOM for proper Hebrew encoding in Excel
     const csvContent = [
       allKeys.join(','),
       ...data.map(item => allKeys.map(key => {
@@ -164,8 +217,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }).join(','))
     ].join('\n');
 
+    // Add BOM (Byte Order Mark) for UTF-8 to ensure Excel recognizes Hebrew text
+    const csvWithBOM = '\uFEFF' + csvContent;
+
     // Trigger download
-    const blob = new Blob([ csvContent ], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([ csvWithBOM ], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = filename;
@@ -213,30 +269,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const text = event.target?.result as string;
+      let text = event.target?.result as string;
       if (!text) return;
+
+      // Remove BOM if present
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
+
+      // Check if text contains Hebrew characters, if not try different encoding
+      const hasHebrew = /[\u0590-\u05FF]/.test(text);
+
+      if (!hasHebrew && /[�\x00-\x1F\x7F-\x9F]/.test(text)) {
+        // Text has gibberish/control characters but no Hebrew - try windows-1255
+        alert('הקובץ לא מקודד ב-UTF-8. אנא שמור את הקובץ כ-"CSV UTF-8" ב-Excel ונסה שוב.');
+        return;
+      }
 
       const lines = text.split('\n').filter(line => line.trim() !== '');
       if (lines.length < 2) return;
 
-      const headers = lines[ 0 ].split(',').map(h => h.trim());
+      // Parse headers using the same CSV parser to handle quoted fields
+      const headers = parseCSVLine(lines[ 0 ]).map(h => h.replace(/^"|"$/g, '').trim());
 
       lines.slice(1).forEach(line => {
         const values = parseCSVLine(line);
         const item: any = {};
 
         headers.forEach((header, index) => {
-          let val = values[ index ];
-          // Try to clean quotes if they exist wrapping the value
-          // Note: parseCSVLine handles structural quotes, but we might still have type conversion to do
+          // Remove surrounding quotes and trim
+          let val = values[ index ]?.replace(/^"|"$/g, '').trim() || '';
 
           if (activeTab === 'products') {
             if ([ 'price', 'originalPrice', 'discount', 'rating', 'reviews', 'id' ].includes(header)) {
-              item[ header ] = val ? Number(val) : undefined;
+              item[ header ] = val && val !== '' ? Number(val) : (header === 'id' ? 0 : undefined);
             } else if (header === 'isNew') {
-              item[ header ] = val === 'true';
+              item[ header ] = val === 'true' || val === '1';
             } else {
-              item[ header ] = val;
+              item[ header ] = val || '';
             }
           } else if (activeTab === 'pricelists' && header === 'prices') {
             try {
@@ -246,7 +316,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }
           } else {
             // Default string
-            item[ header ] = val;
+            item[ header ] = val || '';
           }
         });
 
@@ -385,7 +455,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {products.map((product) => (
+                  {paginatedProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <img src={product.imageUrl} alt="" className="w-12 h-12 object-cover rounded-lg border border-gray-200" />
@@ -416,7 +486,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {categories.map((cat) => {
+                  {paginatedCategories.map((cat) => {
                     const IconComponent = iconMap[ cat.icon ] || HelpCircle;
                     return (
                       <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
@@ -452,7 +522,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {customers.map((customer) => (
+                  {paginatedCustomers.map((customer) => (
                     <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 font-bold">{customer.name}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{customer.email}</td>
@@ -498,7 +568,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {priceLists.map((pl) => (
+                  {paginatedPriceLists.map((pl) => (
                     <tr key={pl.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 font-bold">{pl.name}</td>
                       <td className="px-6 py-4 text-sm font-mono text-gray-500">{pl.id}</td>
@@ -515,6 +585,100 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </table>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {paginationInfo.total > 0 && (
+            <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* Items per page selector */}
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600">הצג:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                  className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-black outline-none"
+                >
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-sm text-gray-600">
+                  מציג {paginationInfo.startIndex}-{paginationInfo.endIndex} מתוך {paginationInfo.total}
+                </span>
+              </div>
+
+              {/* Page navigation */}
+              {paginationInfo.totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  {/* Previous button */}
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    הקודם
+                  </button>
+
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {/* First page */}
+                    {currentPage > 2 && (
+                      <>
+                        <button
+                          onClick={() => handlePageChange(1)}
+                          className="w-10 h-10 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 transition-colors"
+                        >
+                          1
+                        </button>
+                        {currentPage > 3 && <span className="text-gray-400">...</span>}
+                      </>
+                    )}
+
+                    {/* Current page and neighbors */}
+                    {Array.from({ length: paginationInfo.totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        return page === currentPage ||
+                          page === currentPage - 1 ||
+                          page === currentPage + 1;
+                      })
+                      .map(page => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${page === currentPage
+                              ? 'bg-black text-white border-black'
+                              : 'border-gray-300 hover:bg-gray-50'
+                            }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+
+                    {/* Last page */}
+                    {currentPage < paginationInfo.totalPages - 1 && (
+                      <>
+                        {currentPage < paginationInfo.totalPages - 2 && <span className="text-gray-400">...</span>}
+                        <button
+                          onClick={() => handlePageChange(paginationInfo.totalPages)}
+                          className="w-10 h-10 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 transition-colors"
+                        >
+                          {paginationInfo.totalPages}
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Next button */}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === paginationInfo.totalPages}
+                    className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    הבא
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
