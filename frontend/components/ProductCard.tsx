@@ -11,13 +11,13 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onQuickView, showPrices = true }) => {
   return (
-    <div className="group flex flex-col relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-coffee-50">
+    <div className="group flex flex-col h-full relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-coffee-50">
       {/* Image Container */}
-      <div className="relative aspect-square overflow-hidden bg-coffee-50 cursor-pointer" onClick={() => onQuickView && onQuickView(product)}>
+      <div className="relative aspect-square overflow-hidden bg-white cursor-pointer" onClick={() => onQuickView && onQuickView(product)}>
         <img
           src={product.imageUrl}
           alt={product.title}
-          className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
 
         {/* Badges */}
