@@ -10,7 +10,7 @@ import ProductTable from './components/ProductTable';
 import Pagination from './components/Pagination';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { Product, CartItem, Category, Customer, PriceList } from './types';
-import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter } from 'lucide-react';
+import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter, Search } from 'lucide-react';
 import { productsApi, categoriesApi, customersApi, priceListsApi, authApi, settingsApi } from './services/api';
 
 const App: React.FC = () => {
@@ -68,6 +68,7 @@ const App: React.FC = () => {
   const [ showOnlyNew, setShowOnlyNew ] = useState(false);
   const [ showOnlySale, setShowOnlySale ] = useState(false);
   const [ cartAnimating, setCartAnimating ] = useState(false);
+  const [ searchTerm, setSearchTerm ] = useState('');
 
   // --- Fetch Data from Backend ---
   useEffect(() => {
@@ -163,6 +164,7 @@ const App: React.FC = () => {
     setSelectedPriceRange(null);
     setShowOnlyNew(false);
     setShowOnlySale(false);
+    setSearchTerm('');
 
     setCurrentPage(1);
   };
@@ -307,6 +309,14 @@ const App: React.FC = () => {
 
   // --- Filtering & Sorting ---
   const filteredProducts = products.filter(product => {
+    // 0. Search Term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      const matchesTitle = product.title.toLowerCase().includes(searchLower);
+      const matchesCategory = categories.find(c => c.id === product.category)?.name.toLowerCase().includes(searchLower);
+      if (!matchesTitle && !matchesCategory) return false;
+    }
+
     // 1. Category
     if (selectedCategory && selectedCategory !== 'new' && product.category !== selectedCategory) return false;
     if (selectedCategory === 'new' && !product.isNew) return false;
@@ -402,10 +412,30 @@ const App: React.FC = () => {
         <main className="flex-1 min-h-[600px] min-w-0">
           {/* Top Toolbar */}
           <div className="bg-white p-4 rounded-xl border border-coffee-100 shadow-sm mb-6 flex md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-              <span className="text-sm text-coffee-500 font-medium md:block">
+            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start flex-1">
+              <span className="text-sm text-coffee-500 font-medium hidden md:block whitespace-nowrap">
                 {filteredProducts.length} מוצרים
               </span>
+
+              {/* Search Field */}
+              <div className="relative flex-1 max-w-md mx-4">
+                <input
+                  type="text"
+                  placeholder="חיפוש מוצרים..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-coffee-900 focus:border-transparent outline-none transition-all"
+                />
+                <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-4 w-full md:w-auto  justify-end">
               <div className="flex justify-end items-center gap-2 bg-coffee-50 rounded-lg p-1">

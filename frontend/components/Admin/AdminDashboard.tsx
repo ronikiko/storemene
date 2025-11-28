@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, Category, Customer, PriceList } from '../../types';
-import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign } from 'lucide-react';
+import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign, Search } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
@@ -64,6 +64,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [ currentPage, setCurrentPage ] = useState(1);
   const [ itemsPerPage, setItemsPerPage ] = useState(20);
 
+  // Search State
+  const [ searchTerm, setSearchTerm ] = useState('');
+
   // Modal States
   const [ isProductModalOpen, setIsProductModalOpen ] = useState(false);
   const [ editingProduct, setEditingProduct ] = useState<Product | null>(null);
@@ -85,10 +88,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     name: string;
   }>({ isOpen: false, type: null, id: null, name: '' });
 
-  // Reset pagination when switching tabs or changing items per page
+  // Reset pagination when switching tabs, changing items per page, or searching
   useEffect(() => {
     setCurrentPage(1);
-  }, [ activeTab, itemsPerPage ]);
+  }, [ activeTab, itemsPerPage, searchTerm ]);
 
   // Handlers
   const handleSaveProduct = (p: Product) => editingProduct ? onEditProduct(p) : onAddProduct(p);
@@ -129,18 +132,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // --- Pagination Logic ---
   const getCurrentData = () => {
     let data: any[] = [];
+    const searchLower = searchTerm.toLowerCase().trim();
+
     switch (activeTab) {
       case 'products':
-        data = products;
+        data = searchLower
+          ? products.filter(p =>
+            p.title.toLowerCase().includes(searchLower) ||
+            categories.find(c => c.id === p.category)?.name.toLowerCase().includes(searchLower)
+          )
+          : products;
         break;
       case 'categories':
-        data = categories;
+        data = searchLower
+          ? categories.filter(c =>
+            c.name.toLowerCase().includes(searchLower) ||
+            c.id.toLowerCase().includes(searchLower)
+          )
+          : categories;
         break;
       case 'customers':
-        data = customers;
+        data = searchLower
+          ? customers.filter(c =>
+            c.name.toLowerCase().includes(searchLower) ||
+            c.email.toLowerCase().includes(searchLower) ||
+            c.phone.includes(searchLower)
+          )
+          : customers;
         break;
       case 'pricelists':
-        data = priceLists;
+        data = searchLower
+          ? priceLists.filter(pl =>
+            pl.name.toLowerCase().includes(searchLower) ||
+            pl.id.toLowerCase().includes(searchLower)
+          )
+          : priceLists;
         break;
     }
 
@@ -407,6 +433,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             ))}
           </div>
 
+          {/* Search Field */}
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="חיפוש..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-gray-300 rounded-lg px-10 py-2.5 text-sm focus:ring-2 focus:ring-black outline-none"
+            />
+            <Search className="absolute right-3 top-3 w-4 h-4 text-gray-400" />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap self-end xl:self-auto">
             <button
@@ -645,8 +691,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           key={page}
                           onClick={() => handlePageChange(page)}
                           className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${page === currentPage
-                              ? 'bg-black text-white border-black'
-                              : 'border-gray-300 hover:bg-gray-50'
+                            ? 'bg-black text-white border-black'
+                            : 'border-gray-300 hover:bg-gray-50'
                             }`}
                         >
                           {page}
