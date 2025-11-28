@@ -81,11 +81,11 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
 
 
         {/* Image Section */}
-        <div className="w-full md:w-1/2 bg-gray-50 flex-1 md:flex-none md:h-auto relative group">
+        <div className="w-full md:w-1/2 bg-white h-80 md:h-auto md:aspect-square relative group">
           <img
             src={product.imageUrl}
             alt={product.title}
-            className="w-full h-full object-contain p-8"
+            className="w-full h-full object-cover"
           />
           {product.discount && (
             <div className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
