@@ -1,0 +1,887 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Create a New Document (Invoice, Shipping List, Order, ect..)",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/online/RivhitOnlineAPI.svc/Document.New": {
+      "post": {
+        "summary": "Document.New",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "api_token": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "DECD03E5-E35C-41E8-84F7-FBA2FB483928",
+                    "description": "Rivhit Merchant API Identifier.\n\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "document_type": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "Document type.\n\n**Range:** 0 to 999\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "customer_id": {
+                    "type": "integer",
+                    "example": 0,
+                    "description": "Rivhit Customer Identifier.\n\n**Range:** 0 to 999999999\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "last_name": {
+                    "type": "string",
+                    "example": "Israeli",
+                    "description": "Customer Last Name/Company Name.\n\n**Length:** 1 to 30\n**Default:** Customer details\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "first_name": {
+                    "type": "string",
+                    "example": "Moshe",
+                    "description": "Customer First Name.\n\n**Length:** 1 to 20\n**Default:** Customer details\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "address": {
+                    "type": "string",
+                    "example": "Ben Yehuda 1",
+                    "description": "Customers Address.\n\n**Length:** 1 to 30\n**Default:** Customer details\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "city": {
+                    "example": "Tel Aviv",
+                    "description": "Customer's city.\n\n**Length:** 1 to 20\n**Default:** Customer details\n",
+                    "type": "string",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "zipcode": {
+                    "type": "integer",
+                    "example": 6329302,
+                    "description": "Customers Zipcode.\n\n**Range:** 0 to 9999999\n**Default:** Customer details\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "acc_ref": {
+                    "type": "string",
+                    "example": "Ab1234567",
+                    "description": "Customer Outer System Identifier.\n\n**Length:** 1 to 9\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "054-4444444",
+                    "description": "Customer Phone Number.\n\n**Length:** 1 to 15\n**Default:** Customer details\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "customer_type": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "Type of the Customer - to Create.\n\n**Options:** (1 = Customers 20 = Suppliers 60 = Agents)\n**Default:** Rivhit settings (usually 1)\n",
+                    "nullable": true,
+                    "deprecated": false,
+                    "enum": [
+                      1,
+                      20,
+                      60
+                    ]
+                  },
+                  "id_number": {
+                    "type": "integer",
+                    "example": 123456790,
+                    "description": "Customer Israeli Id (by Custom Format).\n\n**Range:** 8-9 digits\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "reference": {
+                    "type": "integer",
+                    "example": 12345,
+                    "description": "The Reference Value - Will be Saved in the Invoice.\n\n**Range:** 0 to 999999999\n**Default:** Rivhit settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "order": {
+                    "type": "string",
+                    "example": "ab12345",
+                    "description": "The Sale Order Value.\n\n**Length:** 1 to 15\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "agent_id": {
+                    "type": "integer",
+                    "example": 0,
+                    "description": "Agent Id Serial Number (Rivhit system).\n\n**Range:** 0 to 999999999\n**Default:** Customer settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "paying_customer_id": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "Defined a Paying Custommer by Id.\n\n**Range:** 0 to 999999999\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "project_id": {
+                    "type": "integer",
+                    "example": 0,
+                    "description": "Project Id Serial Number (Rivhit system).\n\n**Range:** 0 to 999999999\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "comments": {
+                    "type": "string",
+                    "example": "Comments will be here",
+                    "description": "The Customer Comments (to print on the invoice).\n\n**Length:** 1 to 400\n**Default:** Rivhit system settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "sort_code": {
+                    "type": "integer",
+                    "example": 100,
+                    "description": "The Sort Code Type.\n\n**Common:** \n100 = With Vat\n150 = Exempt Vat\n**Range:** 0 to 999\n**Default:** Rivhit Document Settings\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "discount_type": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "Discount Type.\n\n**Options:** (1 = percentage 2 = amount)\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false,
+                    "enum": [
+                      1,
+                      2
+                    ]
+                  },
+                  "discount_value": {
+                    "type": "number",
+                    "format": "double",
+                    "example": 10,
+                    "description": "Discount value.\n\n**Range:** 0 to 999999999.99\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "price_include_vat": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Items Sent With or Without VAT.\n\n**Default:** Document settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "due_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "01-01-2025",
+                    "description": "Due Date for the Document.\n\n**Format:** DD-MM-YY or DD/MM/YYYY\n**Default:** Rivhit settings\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "issue_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "01-01-2025",
+                    "description": "Issue Date of the Document.\n\n**Format:** DD-MM-YY or DD/MM/YYYY\n**Default:** Current day\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "issue_time": {
+                    "type": "string",
+                    "example": "10:30",
+                    "description": "Issue Time of the Document.\n\n**Format:** HH:MM\n**Default:** Current time\n",
+                    "nullable": true,
+                    "deprecated": false,
+                    "pattern": "^([01]?[0-9]|2[0-3]):([0-5]?[0-9])$"
+                  },
+                  "currency_id": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "Document Currency Type.\n\n**Options:** (1 = NIS 2 = USD 3 = EURO 4 = GBP 5 = AUD 6 = CAD 7 = CHF 8 = SEK 9 = DKK 10 = NOK)\n**Default:** Document settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "exchange_rate": {
+                    "type": "number",
+                    "format": "double",
+                    "example": "3.8",
+                    "description": "Fixed Currency Exchange Rate to ILS.\n\n~ From MTC to ILS\n**Range:** Decimal limit (only positive)\n**Default:** Rivhit Settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "reject_item_quantity": {
+                    "type": "boolean",
+                    "example": false,
+                    "description": "Reject Document Producing by Items Stock.\n\nTrue = produce only when items are in stock\nfalse = produce even when items are out of stock\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "no_update_inventory": {
+                    "type": "boolean",
+                    "example": false,
+                    "description": "Disable Reducing Items From the Stock.\n\nTrue = Don't reduce items from stock\nFalse = Reduce items from stock\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "crm_user_id": {
+                    "type": "integer",
+                    "example": 5,
+                    "description": "CRM User Id (Set the Document Producer).\n\n**Range:** 0 to 99999\n**Default:** Rivhit user settings\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "language": {
+                    "type": "string",
+                    "example": "he",
+                    "description": "Set the Document Language.\n\n**Options:** (he/en)\n**Default:** he\n",
+                    "nullable": true,
+                    "deprecated": false,
+                    "enum": [
+                      "he",
+                      "en"
+                    ]
+                  },
+                  "email_to": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "a@a.com",
+                    "description": "Customer Email Address.\n\n**Length:** 6 to 50\n**Default:** Customer details\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "email_bcc": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "a@a.com\"",
+                    "description": "Bcc Email Address.\n\n**Length:** 6 to 50\n**Default:** Rivhit mailing settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "digital_signature": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Produce the Document With a Digital Signature.\n\ntrue = With digital signature   \n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "signature_pin": {
+                    "type": "string",
+                    "example": "Ab123",
+                    "description": "The Digital Signature PIN Code.\n\n~ *Send only by API support instructions*\n**Length:** 3 to 6\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "item_id": {
+                          "type": "integer",
+                          "example": 0,
+                          "description": "Rivhit Item Identifier.\n\n**Range:** 0 to 999999999\n**Default:** Document settings\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "catalog_number": {
+                          "type": "string",
+                          "example": "abc123",
+                          "description": "Item Catalog Number (SKU).\n\n**Length:** 1 to 15 \n**Default:** Item details\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "quantity": {
+                          "type": "number",
+                          "format": "double",
+                          "example": 1,
+                          "description": "The Item Quantity.\n\n**Range:** 0.1 to 99999999.99\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "bruto_price_nis": {
+                          "type": "number",
+                          "format": "double",
+                          "example": 10,
+                          "description": "The Item Bruto Price in ILS.\n\n~ Send only with ILS Currency\n~ Use with document format for discounts.\n**Range:** Decimal limit (can be negative)\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "price_nis": {
+                          "type": "number",
+                          "format": "double",
+                          "example": 10,
+                          "description": "The Item Price in ILS.\n\n~ Mandatory in ILS charge\n**Range:** Decimal limit (can be negative)\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "currency_id": {
+                          "type": "integer",
+                          "example": 1,
+                          "description": "The Item Currency Type.\n\n**Options:** (1 = NIS 2 = USD 3 = EURO 4 = GBP 5 = AUD 6 = CAD 7 = CHF 8 = SEK 9 = DKK 10 = NOK)\n**Default:** Document settings\n",
+                          "nullable": false,
+                          "deprecated": false,
+                          "enum": [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7,
+                            8,
+                            9,
+                            10
+                          ]
+                        },
+                        "price_mtc": {
+                          "type": "number",
+                          "format": "double",
+                          "example": 10,
+                          "description": "The Item Price in foreign currency (MTC).\n\n~ Mandatory in MTC charge\n**Range:** Decimal limit (can be negative) \n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "exchange_rate": {
+                          "type": "number",
+                          "format": "double",
+                          "example": 3.8,
+                          "description": "Fixed Currency Exchange Rate to ILS.\n\n~ Combine with ConvertToNIS\n**Range:** Decimal limit (only positive)\n**Default:** Rivhit document settings\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "storage_id": {
+                          "type": "integer",
+                          "example": 1,
+                          "description": "Storage Id Serial Number (Rivhit system).\n\n~ The stock will decrease from this storage\n**Range:** 0 to 999999\n**Default:** Rivhit item settings\n",
+                          "nullable": true,
+                          "deprecated": false
+                        },
+                        "description": {
+                          "type": "string",
+                          "example": "item test",
+                          "description": "The Item Description.\n\n**Length:** 1 to 100\n**Default:** Rivhit item settings\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "serial_number": {
+                          "type": "string",
+                          "example": "String content",
+                          "description": "Serial number of the item.\n\n**Length:** 1 to 6 \n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "exempt_vat": {
+                          "type": "boolean",
+                          "example": true,
+                          "description": "Indicates if the item is VAT exempt.\n\n**Default:** Rivhit item settings\n",
+                          "nullable": true,
+                          "deprecated": false
+                        },
+                        "closed_document_type": {
+                          "type": "integer",
+                          "example": 1,
+                          "description": "Document Type to Close With the Item (Partial Closing).\n\n**Range:** 1 to 999\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "closed_document_num": {
+                          "type": "integer",
+                          "example": 211,
+                          "description": "Document Number to Close With the Item (Partial Closing).\n\n**Range:** 1 to 999999 \n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "closed_document_line": {
+                          "type": "integer",
+                          "example": 5,
+                          "description": "Set Item Line Number to Close in the Document (Partial Closing).\n\n**Range:** 1 to 232 \n**Default:** No                        \n",
+                          "nullable": false,
+                          "deprecated": false
+                        }
+                      },
+                      "required": [
+                        "item_id",
+                        "quantity",
+                        "description",
+                        "price_nis",
+                        "price_mtc"
+                      ]
+                    },
+                    "example": [
+                      {
+                        "item_id": 123456,
+                        "catalog_number": "abc123",
+                        "quantity": 5,
+                        "bruto_price_nis": 100.5,
+                        "price_nis": 95,
+                        "currency_id": 1,
+                        "price_mtc": 25,
+                        "exchange_rate": 3.8,
+                        "storage_id": 123,
+                        "description": "Sample Item Description",
+                        "serial_number": "A12345",
+                        "exempt_vat": false,
+                        "closed_document_type": 1,
+                        "closed_document_num": 101,
+                        "closed_document_line": 2
+                      },
+                      {
+                        "item_id": 789012,
+                        "catalog_number": "xyz456",
+                        "quantity": 3,
+                        "bruto_price_nis": 150.75,
+                        "price_nis": 145,
+                        "currency_id": 2,
+                        "price_mtc": 35,
+                        "exchange_rate": 4.2,
+                        "storage_id": 124,
+                        "description": "Another Sample Item",
+                        "serial_number": "B67890",
+                        "exempt_vat": true,
+                        "closed_document_type": 2,
+                        "closed_document_num": 202,
+                        "closed_document_line": 3
+                      }
+                    ]
+                  },
+                  "payments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "payment_type": {
+                          "type": "integer",
+                          "example": 2,
+                          "description": "The Payment Type.\n\n~ common Rivhit default values (1 = Check 2 = Cash 4 = Isracard 5 = Visa 9 = Bank Transfer)\n**Range:** 1 to 99\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "amount_nis": {
+                          "type": "number",
+                          "format": "float",
+                          "example": 10,
+                          "description": "The Payment Price in ILS.\n\n~ Mandatory in ILS charge\n**Range:** Decimal limit (can be negative) \n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "due_date": {
+                          "type": "string",
+                          "format": "date",
+                          "example": "08-01-2025",
+                          "description": "Due Date for the Document.\n\n**Format:** DD-MM-YY or DD/MM/YYYY\n**Default:** Rivhit payments settings\n",
+                          "nullable": true,
+                          "deprecated": false
+                        },
+                        "check_number": {
+                          "type": "integer",
+                          "example": 12345678,
+                          "description": "Check/Transaction Voucher Number.\n\n~ Mandatory in check payment\n**Range:** 1 to 99999999\n**Length:** 1 to 8\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "bank_code": {
+                          "type": "integer",
+                          "example": 11,
+                          "description": "Check Bank Code.\n\n~ Mandatory in check payment\n**Range:** 1 to 99\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "branch_number": {
+                          "type": "integer",
+                          "example": 118,
+                          "description": "Check Bank Branch Number.\n\n~ Mandatory in check payment\n**Range:** 1 to 9999999\n**Length:** 1 to 7\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "bank_account_number": {
+                          "type": "string",
+                          "example": 300111,
+                          "description": "Check Bank Branch Number.\n\n~ Mandatory in check payment\n**Range:** 1 to 999999999\n**Length:** 1 to 9\n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "amount_mtc": {
+                          "type": "number",
+                          "format": "float",
+                          "example": 10,
+                          "description": "The Payment Price in MTC.\n\n~ Mandatory in MTC charge\n**Range:** Decimal limit (can be negative) \n**Default:** No\n",
+                          "nullable": false,
+                          "deprecated": false
+                        },
+                        "description": {
+                          "type": "string",
+                          "example": "Cash Payment",
+                          "description": "Payment Description.\n\n**Length:** 1 to 30\n**Default:** Payments settings\n",
+                          "nullable": true,
+                          "deprecated": false
+                        },
+                        "number_of_payments": {
+                          "type": "integer",
+                          "example": 3,
+                          "description": "Number of Multiple Payments.\n\n~ The system will divide the payments \n**Range:** 1 to 999\n**Default:** Single payment\n",
+                          "nullable": true,
+                          "deprecated": false
+                        }
+                      },
+                      "required": [
+                        "payment_type",
+                        "amount_nis",
+                        "amount_mtc",
+                        "description"
+                      ]
+                    },
+                    "example": [
+                      {
+                        "payment_type": 2,
+                        "amount_nis": 100.5,
+                        "due_date": "08-01-2025",
+                        "check_number": 100000028,
+                        "bank_code": 11,
+                        "branch_number": 118,
+                        "bank_account_number": "300111",
+                        "amount_mtc": 25,
+                        "description": "Cash Payment",
+                        "number_of_payments": 1
+                      },
+                      {
+                        "payment_type": 5,
+                        "amount_nis": 200.75,
+                        "due_date": "10-01-2025",
+                        "check_number": 100000029,
+                        "bank_code": 1,
+                        "branch_number": 119,
+                        "bank_account_number": "300112",
+                        "amount_mtc": 50,
+                        "description": "Visa Payment",
+                        "number_of_payments": 3
+                      }
+                    ]
+                  },
+                  "check_only": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Activate Check Mode.\n\n~ Response will include status and error message.                    \n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "request_reference": {
+                    "type": "string",
+                    "example": "abcdefg-&123456789",
+                    "description": "The Document Request Reference.\n\n~ Combine with prevent_duplicates\n~ Should be unique value\n**Length:** 2GB\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "prevent_duplicates": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Activate Prevent Duplicates.\n\n~ Combine with request reference\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "create_customer": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Create a New Customer in Rivhit System.\n\n~ When exsiting customer can't be found  \n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "send_mail": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Send the Document to the Customer.\n\n**Default:** true\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "find_by_mail": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Locate Customer by Email Address.\n\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "find_by_id": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Locate Customer by Israeli Id/VAT Number.\n\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "find_by_acc_ref": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Locate Customer by the acc_ref\n\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "find_by_phone": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Locate Customer by Phone Number.\n\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "create_items": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Create New Items.\n\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "document_number": {
+                    "type": "integer",
+                    "example": 1000,
+                    "description": "Set the Starting Number for a New Document.\n\n~ Only when it is the first document\n**Range:** 0 to 999999  \n**Default:** Documents settings\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "closed_document_type": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "Set the Type of Existing Document to be closed.\n\n~ Combine with ClosedDocumentNumber\n**Range:** 1 to 999\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "closed_document_number": {
+                    "type": "integer",
+                    "example": 115,
+                    "description": "Set the Number of Existing Document to be closed.\n\n~ combine with ClosedDocumentType\n**Range:** 1 to 999999\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "country": {
+                    "type": "string",
+                    "example": "Israel",
+                    "description": "Customer Country.\n\n**Length:** 1 to 39\n**Default:** Customer details\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "state": {
+                    "type": "string",
+                    "example": "Texas",
+                    "description": "Customer State.\n\n**Length:** 1 to 10\n**Default:** No\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "foreign_zipcode": {
+                    "type": "string",
+                    "example": "ab123456",
+                    "description": "Customer Foreign Zip Code.\n\n**Length:** 1 to 7\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "thermal_print": {
+                    "type": "boolean",
+                    "example": false,
+                    "description": "Activate Thermal Print.\n\n**Default:** false\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "validate_id": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Activate ID/VAT Validation.\n\n~ False = In case of wrong ID/Vat format - data won't be saved on the document and customer.\n**Default:** true\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "round_digits": {
+                    "type": "integer",
+                    "description": "Round the document amount.\n\n~ Combine with \"price_include_vat\":false\n**Options:** (0 = X.00 Full round 1 = X.X0 Partial 2 = X.XX No round)\n**Default:** Rivhit settings\n",
+                    "nullable": true,
+                    "deprecated": false,
+                    "enum": [
+                      0,
+                      1,
+                      2
+                    ]
+                  },
+                  "logo_url": {
+                    "type": "string",
+                    "format": "url",
+                    "example": "https://www.rivhit.co.il/wp-content/uploads/2023/01/logo-main.svg ",
+                    "description": "The Business Logo - Printed on the Document.\n\n**Length:** 15 to 400\n**Default:** Rivhit system settings\n",
+                    "nullable": true,
+                    "deprecated": false
+                  },
+                  "default_email": {
+                    "type": "boolean",
+                    "example": false,
+                    "description": "Use the Default Customer Mail Address.\n\n**Default:** false\n",
+                    "nullable": false,
+                    "deprecated": false
+                  },
+                  "email_comments": {
+                    "type": "string",
+                    "example": "Please find your invoice attached.",
+                    "description": "Additional Comments to the Email Body.\n\n**Length:** 1 to 4000\n**Default:** No\n",
+                    "nullable": true,
+                    "deprecated": false
+                  }
+                },
+                "required": [
+                  "api_token",
+                  "document_type",
+                  "customer_id",
+                  "items",
+                  "last_name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success - Document Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error_code": {
+                      "type": "integer",
+                      "example": 0,
+                      "description": "The Response Error/Status Number (0 = Success)"
+                    },
+                    "client_message": {
+                      "type": "string",
+                      "example": "",
+                      "description": "The Client Error Message."
+                    },
+                    "debug_message": {
+                      "type": "string",
+                      "example": "",
+                      "description": "The Response Error Message."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "document_type": {
+                          "type": "integer",
+                          "description": "Document Type."
+                        },
+                        "document_number": {
+                          "type": "integer",
+                          "description": "Document number."
+                        },
+                        "customer_id": {
+                          "type": "integer",
+                          "description": "Customer Identifier."
+                        },
+                        "document_identity": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "Document Identifier."
+                        },
+                        "document_link": {
+                          "type": "string",
+                          "format": "url",
+                          "description": "Document Link"
+                        },
+                        "print_status": {
+                          "type": "integer",
+                          "description": "Digital Signature Error/Status (0 = Success)"
+                        },
+                        "amount": {
+                          "type": "number",
+                          "format": "float",
+                          "description": "Document Amount"
+                        },
+                        "confirmation_number": {
+                          "type": "integer",
+                          "description": "Confirmation Number."
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "error_code": 0,
+                  "client_message": "",
+                  "debug_message": "",
+                  "data": {
+                    "document_type": 2,
+                    "document_number": 28,
+                    "customer_id": 1,
+                    "document_identity": "1627aea5-8e0a-4371-9022-9b504344e724",
+                    "document_link": "https://api.rivhit.co.il/pdf/FileService.svc/GetDocument/000008888/a10f85d0-2c54-4e88-b567-e72cbc358726/true/02_000028",
+                    "print_status": 0,
+                    "amount": 30,
+                    "confirmation_number": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Request Error"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error_code": {
+                      "type": "integer",
+                      "example": -28,
+                      "description": "Error code of the response."
+                    },
+                    "client_message": {
+                      "type": "string",
+                      "example": "ת.ז אינה תקינה",
+                      "description": "The Client Error Message."
+                    },
+                    "debug_message": {
+                      "type": "string",
+                      "example": "-28 : INVALID_ID_NUMBER",
+                      "description": "The Response Error Message."
+                    },
+                    "data": {
+                      "type": "array",
+                      "example": null,
+                      "description": "Document Details"
+                    }
+                  }
+                },
+                "example": {
+                  "error_code": -28,
+                  "client_message": "ת.ז אינה תקינה",
+                  "debug_message": "-28 : INVALID_ID_NUMBER",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.rivhit.co.il/"
+    }
+  ]
+}

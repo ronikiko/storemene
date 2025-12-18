@@ -9,10 +9,13 @@ interface CartPageProps {
   onRemoveItem: (id: number) => void;
   onBack: () => void;
   showPrices?: boolean;
+  onPlaceOrder: (order: any) => void;
+  activeCustomerId?: string | null;
 }
 
-const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onBack, showPrices = true }) => {
+const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onBack, showPrices = true, onPlaceOrder, activeCustomerId }) => {
   const [ customerName, setCustomerName ] = useState('');
+  const [ customerPhone, setCustomerPhone ] = useState('');
   const [ address, setAddress ] = useState('');
   const [ itemToRemove, setItemToRemove ] = useState<number | null>(null);
   const { error } = useToast();
@@ -24,29 +27,60 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
   const shippingCost = subtotal > 199 ? 0 : 30;
   const total = subtotal + shippingCost;
 
-  const handleWhatsAppCheckout = () => {
+  const handleCheckout = async () => {
     if (!customerName.trim()) {
       alert('אנא מלא את שמך לפני שליחת ההזמנה');
       return;
     }
 
-    const phoneNumber = "9720543087670"; // REPLACE WITH YOUR REAL NUMBER
+    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    let message = `*היי, אשמח לבצע הזמנה חדשה מ 👋\n\n`;
-    message += `*שם הלקוח:* ${customerName}\n`;
-    message += `*כתובת:* ${address || 'איסוף עצמי'}\n\n`;
-    message += `*סיכום הזמנה:*\n`;
+    const newOrder = {
+      id: orderId,
+      customerId: activeCustomerId || undefined,
+      customerName,
+      customerPhone,
+      customerAddress: address,
+      items: cartItems.map(item => ({
+        productId: item.id,
+        title: item.title,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.price * item.quantity,
+        imageUrl: item.imageUrl
+      })),
+      totalAmount: total,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
 
-    cartItems.forEach(item => {
-      message += `▫️ ${item.quantity}x ${item.title} - ₪${(item.price * item.quantity).toFixed(2)}\n`;
-    });
+    // 1. Save to database
+    try {
+      await onPlaceOrder(newOrder);
 
-    message += `\n------------------\n`;
-    message += `*סך הכל לתשלום: ₪${total.toFixed(2)}*`;
-    if (shippingCost === 0) message += ` (כולל משלוח חינם)`;
+      //   // 2. Open WhatsApp (Optional but expected per current code)
+      //   const phoneNumber = "9720543087670";
+      //   let message = `*היי, אשמח לבצע הזמנה חדשה מ 👋\n\n`;
+      //   message += `*מספר הזמנה:* ${orderId}\n`;
+      //   message += `*שם הלקוח:* ${customerName}\n`;
+      //   message += `*טלפון:* ${customerPhone}\n`;
+      //   message += `*כתובת:* ${address || 'איסוף עצמי'}\n\n`;
+      //   message += `*סיכום הזמנה:*\n`;
 
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+      //   cartItems.forEach(item => {
+      //     message += `▫️ ${item.quantity}x ${item.title} - ₪${(item.price * item.quantity).toFixed(2)}\n`;
+      //   });
+
+      //   message += `\n------------------\n`;
+      //   message += `*סך הכל לתשלום: ₪${total.toFixed(2)}*`;
+      //   if (shippingCost === 0) message += ` (כולל משלוח חינם)`;
+
+      //   const encodedMessage = encodeURIComponent(message);
+      //   window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
+    } catch (err) {
+      console.error('Failed to create order:', err);
+      alert('שגיאה ביצירת ההזמנה. אנא נסה שוב.');
+    }
   };
 
   const confirmRemove = () => {
@@ -158,6 +192,16 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">טלפון *</label>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="050-0000000"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">כתובת למשלוח</label>
                 <input
                   type="text"
@@ -191,7 +235,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
             )}
 
             <button
-              onClick={handleWhatsAppCheckout}
+              onClick={handleCheckout}
               className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-4 rounded-xl shadow-md transition-all hover:shadow-lg flex items-center justify-center gap-2"
             >
               <MessageCircle className="w-5 h-5" />

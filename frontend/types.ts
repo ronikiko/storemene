@@ -35,3 +35,27 @@ export interface Customer {
   priceListId?: string; // Optional link to a price list
   token: string;
 }
+
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface OrderItem {
+  productId: number;
+  title: string;
+  quantity: number;
+  price: number;
+  total: number;
+  imageUrl: string;
+}
+
+export interface Order {
+  id: string;
+  customerId?: string;
+  customerName: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  items: OrderItem[];
+  totalAmount: number;
+  status: OrderStatus;
+  documentLink?: string;
+  createdAt: string;
+}

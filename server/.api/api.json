@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "apis": [
+    {
+      "identifier": "rivhit-api",
+      "source": "@rivhit-api/v1.0#48w2m5otmhukh9at",
+      "integrity": "sha512-5ykFQ0ragdBipfHP+j6C82gWVRfrSqOnPZgC7bwk/WyXRt2VnAPoLgwh0/USmnRN54XBFP9fVdJanxZTZAruWg==",
+      "installerVersion": "6.1.3"
+    }
+  ]
+}

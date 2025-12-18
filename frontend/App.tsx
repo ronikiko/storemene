@@ -9,9 +9,9 @@ import AdminDashboard from './components/Admin/AdminDashboard';
 import ProductTable from './components/ProductTable';
 import Pagination from './components/Pagination';
 import { ToastProvider, useToast } from './context/ToastContext';
-import { Product, CartItem, Category, Customer, PriceList } from './types';
+import { Product, CartItem, Category, Customer, PriceList, Order } from './types';
 import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter, Search } from 'lucide-react';
-import { productsApi, categoriesApi, customersApi, priceListsApi, authApi, settingsApi } from './services/api';
+import { productsApi, categoriesApi, customersApi, priceListsApi, authApi, settingsApi, ordersApi } from './services/api';
 
 const App: React.FC = () => {
   // --- Data State (From Backend) ---
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [ categories, setCategories ] = useState<Category[]>([]);
   const [ customers, setCustomers ] = useState<Customer[]>([]);
   const [ priceLists, setPriceLists ] = useState<PriceList[]>([]);
+  const [ orders, setOrders ] = useState<Order[]>([]);
   const [ showPrices, setShowPrices ] = useState(true);
   const { success } = useToast();
 
@@ -75,18 +76,20 @@ const App: React.FC = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [ productsData, categoriesData, customersData, priceListsData, settingsData ] = await Promise.all([
+        const [ productsData, categoriesData, customersData, priceListsData, settingsData, ordersData ] = await Promise.all([
           productsApi.getAll(),
           categoriesApi.getAll(),
           customersApi.getAll(),
           priceListsApi.getAll(),
           settingsApi.getAll(),
+          ordersApi.getAll(),
         ]);
 
         setProducts(productsData);
         setCategories(categoriesData);
         setCustomers(customersData);
         setPriceLists(priceListsData);
+        setOrders(ordersData);
 
         // Load show_prices setting
         const showPricesSetting = settingsData.find((s: any) => s.id === 'show_prices');
@@ -357,19 +360,63 @@ const App: React.FC = () => {
   };
 
   // --- View Rendering Helpers ---
+  const handlePlaceOrder = async (order: Order) => {
+    try {
+      const savedOrder = await ordersApi.create(order);
+      setOrders(prev => [ savedOrder, ...prev ]);
+      setCartItems([]);
+      setCurrentView('home');
+      success('ההזמנה התקבלה בהצלחה!');
+    } catch (err) {
+      console.error('Failed to place order:', err);
+      // Fallback in case of API failure for some reason (optional, but good for UX)
+      // For now just rethrow or show alert
+      alert('שגיאה בביצוע ההזמנה. אנא נסה שוב.');
+    }
+  };
+
+  const handleUpdateOrder = async (updatedOrder: Order) => {
+    try {
+      const savedOrder = await ordersApi.update(updatedOrder.id, updatedOrder);
+      setOrders(prev => prev.map(o => o.id === savedOrder.id ? savedOrder : o));
+    } catch (err) {
+      console.error('Failed to update order:', err);
+    }
+  };
+
   const renderLogin = () => <AdminLogin onLogin={handleLogin} onBack={() => setCurrentView('home')} />;
 
   const renderAdmin = () => {
     if (!isAdminAuthenticated) return renderLogin();
     return (
       <AdminDashboard
-        products={products} categories={categories} customers={customers} priceLists={priceLists}
-        onAddProduct={handleAddProduct} onEditProduct={handleEditProduct} onDeleteProduct={handleDeleteProduct}
-        onAddCategory={handleAddCategory} onEditCategory={handleEditCategory} onDeleteCategory={handleDeleteCategory}
-        onAddCustomer={handleAddCustomer} onEditCustomer={handleEditCustomer} onDeleteCustomer={handleDeleteCustomer}
-        onAddPriceList={handleAddPriceList} onEditPriceList={handleEditPriceList} onDeletePriceList={handleDeletePriceList}
+        products={products}
+        categories={categories}
+        customers={customers}
+        priceLists={priceLists}
+        orders={orders}
+
+        onAddProduct={handleAddProduct}
+        onEditProduct={handleEditProduct}
+        onDeleteProduct={handleDeleteProduct}
+
+        onAddCategory={handleAddCategory}
+        onEditCategory={handleEditCategory}
+        onDeleteCategory={handleDeleteCategory}
+
+        onAddCustomer={handleAddCustomer}
+        onEditCustomer={handleEditCustomer}
+        onDeleteCustomer={handleDeleteCustomer}
+
+        onAddPriceList={handleAddPriceList}
+        onEditPriceList={handleEditPriceList}
+        onDeletePriceList={handleDeletePriceList}
+
+        onUpdateOrder={handleUpdateOrder}
+
         showPrices={showPrices}
         onUpdateShowPrices={handleUpdateShowPrices}
+
         onLogout={() => { setIsAdminAuthenticated(false); setCurrentView('home'); }}
         onGoHome={() => setCurrentView('home')}
       />
@@ -385,7 +432,15 @@ const App: React.FC = () => {
         onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
         cartAnimating={cartAnimating}
       />
-      <CartPage cartItems={cartItems} onUpdateQuantity={handleUpdateCartQuantity} onRemoveItem={handleRemoveFromCart} onBack={() => setCurrentView('home')} showPrices={showPrices} />
+      <CartPage
+        cartItems={cartItems}
+        onUpdateQuantity={handleUpdateCartQuantity}
+        onRemoveItem={handleRemoveFromCart}
+        onBack={() => setCurrentView('home')}
+        showPrices={showPrices}
+        onPlaceOrder={handlePlaceOrder}
+        activeCustomerId={activeCustomerId}
+      />
     </div>
   );
 

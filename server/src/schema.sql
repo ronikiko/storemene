@@ -52,3 +52,31 @@ CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_customers_token ON customers(token);
 CREATE INDEX IF NOT EXISTS idx_price_list_items_priceListId ON price_list_items(priceListId);
 CREATE INDEX IF NOT EXISTS idx_price_list_items_productId ON price_list_items(productId);
+
+-- Orders table
+CREATE TABLE IF NOT EXISTS orders (
+    id TEXT PRIMARY KEY,
+    customerId TEXT,
+    customerName TEXT NOT NULL,
+    customerPhone TEXT,
+    customerAddress TEXT,
+    totalAmount REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    document_link TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Order Items table
+CREATE TABLE IF NOT EXISTS order_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    orderId TEXT NOT NULL,
+    productId INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    price REAL NOT NULL,
+    total REAL NOT NULL,
+    imageUrl TEXT NOT NULL,
+    FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_items_orderId ON order_items(orderId);

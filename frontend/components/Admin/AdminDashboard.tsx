@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Product, Category, Customer, PriceList } from '../../types';
-import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign, Search } from 'lucide-react';
+import { Product, Category, Customer, PriceList, Order } from '../../types';
+import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign, Search, ShoppingBag } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
 import PriceListFormModal from './PriceListFormModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import OrdersTable from './OrdersTable';
 import { useToast } from '../../context/ToastContext';
 
 interface AdminDashboardProps {
@@ -13,6 +14,7 @@ interface AdminDashboardProps {
   categories: Category[];
   customers: Customer[];
   priceLists: PriceList[];
+  orders: Order[];
 
   onAddProduct: (product: Product) => void;
   onEditProduct: (product: Product) => void;
@@ -29,6 +31,8 @@ interface AdminDashboardProps {
   onAddPriceList: (pl: PriceList) => void;
   onEditPriceList: (pl: PriceList) => void;
   onDeletePriceList: (id: string) => void;
+
+  onUpdateOrder: (order: Order) => void;
 
   showPrices: boolean;
   onUpdateShowPrices: (value: boolean) => void;
@@ -48,15 +52,16 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
-  products, categories, customers, priceLists,
+  products, categories, customers, priceLists, orders,
   onAddProduct, onEditProduct, onDeleteProduct,
   onAddCategory, onEditCategory, onDeleteCategory,
   onAddCustomer, onEditCustomer, onDeleteCustomer,
   onAddPriceList, onEditPriceList, onDeletePriceList,
+  onUpdateOrder,
   showPrices, onUpdateShowPrices,
   onLogout, onGoHome
 }) => {
-  const [ activeTab, setActiveTab ] = useState<'products' | 'categories' | 'customers' | 'pricelists'>('products');
+  const [ activeTab, setActiveTab ] = useState<'products' | 'categories' | 'customers' | 'pricelists' | 'orders'>('products');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { success, error, info } = useToast();
 
@@ -167,6 +172,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             pl.id.toLowerCase().includes(searchLower)
           )
           : priceLists;
+        break;
+      case 'orders':
+        data = searchLower
+          ? orders.filter(o =>
+            o.customerName.toLowerCase().includes(searchLower) ||
+            o.id.toLowerCase().includes(searchLower) ||
+            o.customerPhone?.includes(searchLower)
+          )
+          : orders;
         break;
     }
 
@@ -425,12 +439,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-black text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+                className={`
+                  flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all relative
+                  ${activeTab === tab.id ? 'text-coffee-900' : 'text-gray-400 hover:text-gray-600'}
+                `}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-coffee-600' : ''}`} />
                 {tab.label}
+                {activeTab === tab.id && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-coffee-900 rounded-t-full" />
+                )}
               </button>
             ))}
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`
+                  flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all relative
+                  ${activeTab === 'orders' ? 'text-coffee-900' : 'text-gray-400 hover:text-gray-600'}
+                `}
+            >
+              <ShoppingBag className={`w-5 h-5 ${activeTab === 'orders' ? 'text-coffee-600' : ''}`} />
+              הזמנות
+              {activeTab === 'orders' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-coffee-900 rounded-t-full" />
+              )}
+            </button>
           </div>
 
           {/* Search Field */}
@@ -631,6 +664,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </table>
             )}
           </div>
+
+          {activeTab === 'orders' && (
+            <div className="p-4 bg-gray-50 border-t border-gray-100">
+              <OrdersTable orders={paginationInfo.data} onUpdateStatus={onUpdateOrder} />
+            </div>
+          )}
 
           {/* Pagination Controls */}
           {paginationInfo.total > 0 && (

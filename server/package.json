@@ -1,28 +1,29 @@
 {
-  "name": "styleflow-backend",
-  "version": "1.0.0",
-  "description": "Backend server for StyleFlow IL with SQLite database",
-  "main": "src/index.js",
-  "type": "module",
-  "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
-    "seed": "node src/seed.js",
-    "db:push": "drizzle-kit push:pg",
-    "db:studio": "drizzle-kit studio"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "drizzle-orm": "^0.29.3",
-    "express": "^4.18.2",
-    "pg": "^8.16.3",
-    "postgres": "^3.4.3"
-  },
-  "devDependencies": {
-    "drizzle-kit": "^0.20.9"
-  }
+	"name": "styleflow-backend",
+	"version": "1.0.0",
+	"description": "Backend server for StyleFlow IL with SQLite database",
+	"main": "src/index.js",
+	"type": "module",
+	"scripts": {
+		"dev": "node --watch src/index.js",
+		"start": "node src/index.js",
+		"seed": "node src/seed.js",
+		"db:push": "drizzle-kit push:pg",
+		"db:studio": "drizzle-kit studio"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@api/rivhit-api": "file:./.api/apis/rivhit-api",
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.5",
+		"drizzle-orm": "^0.29.3",
+		"express": "^4.18.2",
+		"pg": "^8.16.3",
+		"postgres": "^3.4.3"
+	},
+	"devDependencies": {
+		"drizzle-kit": "^0.20.9"
+	}
 }
