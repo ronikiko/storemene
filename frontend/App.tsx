@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
+import { Routes, Route, useNavigate, useLocation, Navigate, useSearchParams } from 'react-router-dom';
 import CategoryNav from './components/CategoryNav';
 import ProductCard from './components/ProductCard';
 import QuickViewModal from './components/QuickViewModal';
@@ -27,8 +28,10 @@ const App: React.FC = () => {
   const [ isLoading, setIsLoading ] = useState(true);
   const [ error, setError ] = useState<string | null>(null);
 
-  // --- View State ---
-  const [ currentView, setCurrentView ] = useState<'home' | 'checkout' | 'login' | 'admin'>('home');
+  // --- Navigation & Auth ---
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [ searchParams ] = useSearchParams();
   const [ isAdminAuthenticated, setIsAdminAuthenticated ] = useState(false);
 
   // --- Session State (Simulation) ---
@@ -111,15 +114,14 @@ const App: React.FC = () => {
 
   // --- URL Customer Token Logic ---
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenParam = params.get('token');
+    const tokenParam = searchParams.get('token');
     if (tokenParam && customers.length > 0) {
       const customerExists = customers.find(c => c.token === tokenParam);
       if (customerExists) {
         setActiveCustomerId(customerExists.id);
       }
     }
-  }, [ customers ]);
+  }, [ customers, searchParams ]);
 
   // --- Cart Logic ---
   const cartCount = useMemo(() => cartItems.reduce((acc, item) => acc + item.quantity, 0), [ cartItems ]);
@@ -182,8 +184,11 @@ const App: React.FC = () => {
     }
   };
 
-  // --- CRUD Handlers (with API calls) ---
-  const handleLogin = () => { setIsAdminAuthenticated(true); setCurrentView('admin'); };
+  // --- Auth Handler ---
+  const handleLogin = () => {
+    setIsAdminAuthenticated(true);
+    navigate('/admin');
+  };
 
   // Products
   const handleAddProduct = async (p: Product) => {
@@ -365,7 +370,7 @@ const App: React.FC = () => {
       const savedOrder = await ordersApi.create(order);
       setOrders(prev => [ savedOrder, ...prev ]);
       setCartItems([]);
-      setCurrentView('home');
+      navigate('/');
       success('ההזמנה התקבלה בהצלחה!');
     } catch (err) {
       console.error('Failed to place order:', err);
@@ -384,7 +389,7 @@ const App: React.FC = () => {
     }
   };
 
-  const renderLogin = () => <AdminLogin onLogin={handleLogin} onBack={() => setCurrentView('home')} />;
+  const renderLogin = () => <AdminLogin onLogin={handleLogin} onBack={() => navigate('/')} />;
 
   const renderAdmin = () => {
     if (!isAdminAuthenticated) return renderLogin();
@@ -417,42 +422,41 @@ const App: React.FC = () => {
         showPrices={showPrices}
         onUpdateShowPrices={handleUpdateShowPrices}
 
-        onLogout={() => { setIsAdminAuthenticated(false); setCurrentView('home'); }}
-        onGoHome={() => setCurrentView('home')}
+        onLogout={() => { setIsAdminAuthenticated(false); navigate('/'); }}
+        onGoHome={() => navigate('/')}
       />
     );
   };
 
-  const renderCheckout = () => (
-    <div className="min-h-screen bg-white font-sans">
+  const Layout = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex flex-col min-h-screen">
       <Header
         cartCount={cartCount}
-        onCartClick={() => setCurrentView('checkout')}
-        onLogoClick={() => setCurrentView('home')}
-        onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
+        onCartClick={() => navigate('/checkout')}
+        onLogoClick={() => navigate('/')}
+        onUserClick={() => isAdminAuthenticated ? navigate('/admin') : navigate('/login')}
         cartAnimating={cartAnimating}
       />
-      <CartPage
-        cartItems={cartItems}
-        onUpdateQuantity={handleUpdateCartQuantity}
-        onRemoveItem={handleRemoveFromCart}
-        onBack={() => setCurrentView('home')}
-        showPrices={showPrices}
-        onPlaceOrder={handlePlaceOrder}
-        activeCustomerId={activeCustomerId}
-      />
+      <main className="flex-grow">
+        {children}
+      </main>
     </div>
+  );
+
+  const renderCheckout = () => (
+    <CartPage
+      cartItems={cartItems}
+      onUpdateQuantity={handleUpdateCartQuantity}
+      onRemoveItem={handleRemoveFromCart}
+      onBack={() => navigate('/')}
+      showPrices={showPrices}
+      onPlaceOrder={handlePlaceOrder}
+      activeCustomerId={activeCustomerId}
+    />
   );
 
   const renderHome = () => (
     <div className="min-h-screen pb-20 bg-gray-50 font-sans selection:bg-gray-200">
-      <Header
-        cartCount={cartCount}
-        onCartClick={() => setCurrentView('checkout')}
-        onLogoClick={() => setCurrentView('home')}
-        onUserClick={() => isAdminAuthenticated ? setCurrentView('admin') : setCurrentView('login')}
-        cartAnimating={cartAnimating}
-      />
 
       <div className="container mx-auto px-4 mt-4 mb-2">
         <CategoryNav
@@ -591,10 +595,13 @@ const App: React.FC = () => {
       {/* Main Content */}
       {!isLoading && !error && (
         <>
-          {currentView === 'login' && renderLogin()}
-          {currentView === 'admin' && renderAdmin()}
-          {currentView === 'checkout' && renderCheckout()}
-          {currentView === 'home' && renderHome()}
+          <Routes>
+            <Route path="/" element={<Layout>{renderHome()}</Layout>} />
+            <Route path="/checkout" element={<Layout>{renderCheckout()}</Layout>} />
+            <Route path="/login" element={renderLogin()} />
+            <Route path="/admin" element={isAdminAuthenticated ? renderAdmin() : <Navigate to="/login" />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
 
           {/* Simulation Bar (Active Customer Indicator) */}
           {activeCustomerId && (() => {
