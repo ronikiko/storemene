@@ -126,6 +126,18 @@ const App: React.FC = () => {
   // --- Cart Logic ---
   const cartCount = useMemo(() => cartItems.reduce((acc, item) => acc + item.quantity, 0), [ cartItems ]);
 
+  const currentCustomerName = useMemo(() => {
+    if (activeCustomerId) {
+      const customer = customers.find(c => c.id === activeCustomerId);
+      if (customer) {
+        const priceList = customer.priceListId ? priceLists.find(pl => pl.id === customer.priceListId) : null;
+        return priceList ? `${customer.name}` : customer.name;
+      }
+      return null;
+    }
+    return customers.find(c => c.name === 'לקוח כללי')?.name || 'לקוח כללי';
+  }, [ activeCustomerId, customers, priceLists ]);
+
   const handleAddToCart = (product: Product, quantity: number = 1) => {
     const info = getEffectiveProductInfo(product);
     const itemToAdd = { ...product, price: info.price }; // Use effective price for cart
@@ -450,6 +462,7 @@ const App: React.FC = () => {
         onLogoClick={() => navigate('/')}
         onUserClick={() => isAdminAuthenticated ? navigate('/admin') : navigate('/login')}
         cartAnimating={cartAnimating}
+        customerName={currentCustomerName}
       />
       <main className="flex-grow">
         {children}
@@ -466,6 +479,8 @@ const App: React.FC = () => {
       showPrices={showPrices}
       onPlaceOrder={handlePlaceOrder}
       activeCustomerId={activeCustomerId}
+      customers={customers}
+      customerName={currentCustomerName || 'לקוח כללי'}
     />
   );
 
@@ -617,22 +632,6 @@ const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
 
-          {/* Simulation Bar (Active Customer Indicator) */}
-          {activeCustomerId && (() => {
-            const activeCustomer = customers.find(c => c.id === activeCustomerId);
-            const activePriceList = activeCustomer?.priceListId ? priceLists.find(pl => pl.id === activeCustomer.priceListId) : null;
-
-            return (
-              <div className="fixed bottom-16 md:bottom-4 left-4 z-50 bg-coffee-900/95 backdrop-blur text-white px-5 py-3 rounded-full shadow-xl text-xs flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 border border-white/10">
-                <Users className="w-4 h-4 text-green-400" />
-                <span className="opacity-75 font-medium">צפה כלקוח:</span>
-                <span className="font-bold text-white text-sm">
-                  {activeCustomer?.name}
-                  {activePriceList && <span className="text-green-400 ml-1">({activePriceList.name})</span>}
-                </span>
-              </div>
-            );
-          })()}
 
           {quickViewProduct && (
             <QuickViewModal

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { CartItem } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { CartItem, Customer } from '../types';
 import { Trash2, Plus, Minus, ArrowRight, MessageCircle, ShieldCheck, AlertTriangle, X, Loader2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
@@ -11,12 +11,11 @@ interface CartPageProps {
   showPrices?: boolean;
   onPlaceOrder: (order: any) => void;
   activeCustomerId?: string | null;
+  customers: Customer[];
+  customerName: string;
 }
 
-const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onBack, showPrices = true, onPlaceOrder, activeCustomerId }) => {
-  const [ customerName, setCustomerName ] = useState('');
-  const [ customerPhone, setCustomerPhone ] = useState('');
-  const [ address, setAddress ] = useState('');
+const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemoveItem, onBack, showPrices = true, onPlaceOrder, activeCustomerId, customers, customerName }) => {
   const [ itemToRemove, setItemToRemove ] = useState<number | null>(null);
   const [ isSubmitting, setIsSubmitting ] = useState(false);
   const { error } = useToast();
@@ -29,10 +28,6 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
   const total = subtotal + shippingCost;
 
   const handleCheckout = async () => {
-    if (!customerName.trim()) {
-      alert('אנא מלא את שמך לפני שליחת ההזמנה');
-      return;
-    }
 
     const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -40,8 +35,6 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
       id: orderId,
       customerId: activeCustomerId || undefined,
       customerName,
-      customerPhone,
-      customerAddress: address,
       items: cartItems.map(item => ({
         productId: item.id,
         title: item.title,
@@ -184,38 +177,6 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
             <h3 className="font-bold text-xl mb-6">סיכום הזמנה</h3>
 
             {/* User Details Form */}
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">שם מלא *</label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="ישראל ישראלי"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">טלפון *</label>
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="050-0000000"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">כתובת למשלוח</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="רחוב, מספר, עיר"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black"
-                />
-              </div>
-            </div>
 
             {showPrices && (
               <div className="space-y-3 border-t border-gray-100 pt-4 mb-6">
@@ -248,7 +209,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
               ) : (
                 <MessageCircle className="w-5 h-5" />
               )}
-              {isSubmitting ? 'מעבד הזמנה...' : 'שליחת הזמנה ב-WhatsApp'}
+              {isSubmitting ? 'מעבד הזמנה...' : 'שליחת הזמנה'}
             </button>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">

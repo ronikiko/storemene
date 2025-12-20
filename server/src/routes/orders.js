@@ -1,7 +1,7 @@
 import express from 'express'
 import { db } from '../db/index.js'
 import { orders, orderItems } from '../db/schema.js'
-import { eq } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 // import rivhitApi from '@api/rivhit-api'
 import { rivchitService } from '../services/RivchitService.js'
 
@@ -10,7 +10,10 @@ const router = express.Router()
 // GET all orders with items
 router.get('/', async (req, res) => {
 	try {
-		const allOrders = await db.select().from(orders).orderBy(orders.createdAt)
+		const allOrders = await db
+			.select()
+			.from(orders)
+			.orderBy(desc(orders.createdAt))
 
 		// For each order, fetch items
 		const ordersWithItems = await Promise.all(
