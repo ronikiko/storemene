@@ -100,28 +100,68 @@ router.post('/', async (req, res) => {
 	}
 })
 
-// PUT update order status
+// PUT update order
 router.put('/:id', async (req, res) => {
 	try {
-		const { status } = req.body
+		const {
+			customerId,
+			customerName,
+			customerPhone,
+			customerAddress,
+			items,
+			totalAmount,
+			status,
+		} = req.body
+		const orderId = req.params.id
+
+		// Update order details
 		const [updatedOrder] = await db
 			.update(orders)
-			.set({ status })
-			.where(eq(orders.id, req.params.id))
+			.set({
+				customerId,
+				customerName,
+				customerPhone,
+				customerAddress,
+				totalAmount,
+				status,
+			})
+			.where(eq(orders.id, orderId))
 			.returning()
 
 		if (!updatedOrder) {
 			return res.status(404).json({ error: 'Order not found' })
 		}
 
-		// Fetch items
-		const items = await db
+		// Update items: Delete old ones and insert new ones
+		if (items) {
+			await db.delete(orderItems).where(eq(orderItems.orderId, orderId))
+
+			if (items.length > 0) {
+				await Promise.all(
+					items.map((item) =>
+						db.insert(orderItems).values({
+							orderId,
+							productId: item.productId,
+							title: item.title,
+							quantity: item.quantity,
+							price: item.price,
+							total: item.total,
+							imageUrl: item.imageUrl,
+						})
+					)
+				)
+			}
+		}
+
+		// Fetch items to return complete object
+		const savedItems = await db
 			.select()
 			.from(orderItems)
-			.where(eq(orderItems.orderId, req.params.id))
+			.where(eq(orderItems.orderId, orderId))
 
-		res.json({ ...updatedOrder, items })
+		res.json({ ...updatedOrder, items: savedItems })
 	} catch (error) {
+		console.error('Error updating order:', error)
 		res.status(500).json({ error: error.message })
 	}
 })

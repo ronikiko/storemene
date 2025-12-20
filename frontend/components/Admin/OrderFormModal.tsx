@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Product, Customer, Order, OrderItem, OrderStatus } from '../../types';
-import { X, Plus, Trash2, Search } from 'lucide-react';
+import { X, Plus, Trash2, Search, Loader2 } from 'lucide-react';
 
 interface OrderFormModalProps {
     isOpen: boolean;
@@ -8,14 +8,30 @@ interface OrderFormModalProps {
     onSave: (order: Order) => void;
     customers: Customer[];
     products: Product[];
+    orderToEdit?: Order | null;
 }
 
-const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave, customers, products }) => {
+const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave, customers, products, orderToEdit }) => {
     const [ selectedCustomerId, setSelectedCustomerId ] = useState<string>('');
     const [ orderItems, setOrderItems ] = useState<OrderItem[]>([]);
     const [ status, setStatus ] = useState<OrderStatus>('pending');
     const [ address, setAddress ] = useState('');
     const [ searchTerm, setSearchTerm ] = useState('');
+    const [ isSubmitting, setIsSubmitting ] = useState(false);
+
+    useEffect(() => {
+        if (orderToEdit) {
+            setSelectedCustomerId(orderToEdit.customerId || '');
+            setOrderItems(orderToEdit.items);
+            setStatus(orderToEdit.status);
+            setAddress(orderToEdit.customerAddress || '');
+        } else {
+            setSelectedCustomerId('');
+            setOrderItems([]);
+            setStatus('pending');
+            setAddress('');
+        }
+    }, [ orderToEdit, isOpen ]);
 
     const selectedCustomer = useMemo(() =>
         customers.find(c => c.id === selectedCustomerId),
@@ -68,7 +84,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
         ));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCustomer) {
             alert('אנא בחר לקוח');
@@ -79,26 +95,33 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
             return;
         }
 
-        const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-        const newOrder: Order = {
-            id: orderId,
-            customerId: selectedCustomer.id,
-            customerName: selectedCustomer.name,
-            customerPhone: selectedCustomer.phone,
-            customerAddress: address,
-            items: orderItems,
-            totalAmount,
-            status,
-            createdAt: new Date().toISOString()
-        };
+        setIsSubmitting(true);
+        try {
+            const newOrder: Order = {
+                id: orderToEdit ? orderToEdit.id : `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+                customerId: selectedCustomer.id,
+                customerName: selectedCustomer.name,
+                customerPhone: selectedCustomer.phone,
+                customerAddress: address,
+                items: orderItems,
+                totalAmount,
+                status,
+                createdAt: orderToEdit ? orderToEdit.createdAt : new Date().toISOString()
+            };
 
-        onSave(newOrder);
-        onClose();
-        // Reset state
-        setSelectedCustomerId('');
-        setOrderItems([]);
-        setStatus('pending');
-        setAddress('');
+            await onSave(newOrder);
+            onClose();
+            // Reset state
+            setSelectedCustomerId('');
+            setOrderItems([]);
+            setStatus('pending');
+            setAddress('');
+        } catch (err) {
+            console.error('Failed to save order:', err);
+            alert('שגיאה בשמירת ההזמנה. אנא נסה שוב.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -108,8 +131,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold">יצירת הזמנה חדשה</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+                    <h2 className="text-2xl font-bold">{orderToEdit ? `עריכת הזמנה #${orderToEdit.id}` : 'יצירת הזמנה חדשה'}</h2>
+                    <button
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 disabled:opacity-50"
+                    >
                         <X className="w-6 h-6" />
                     </button>
                 </div>
@@ -250,15 +277,18 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-2.5 rounded-xl border border-gray-300 font-bold hover:bg-gray-50 transition-colors"
+                            disabled={isSubmitting}
+                            className="px-6 py-2.5 rounded-xl border border-gray-300 font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
                             ביטול
                         </button>
                         <button
                             type="submit"
-                            className="px-8 py-2.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-colors"
+                            disabled={isSubmitting}
+                            className="px-8 py-2.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-70 flex items-center gap-2"
                         >
-                            שמור הזמנה
+                            {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
+                            {isSubmitting ? 'שומר...' : 'שמור הזמנה'}
                         </button>
                     </div>
                 </form>

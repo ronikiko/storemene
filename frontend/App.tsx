@@ -384,8 +384,10 @@ const App: React.FC = () => {
     try {
       const savedOrder = await ordersApi.update(updatedOrder.id, updatedOrder);
       setOrders(prev => prev.map(o => o.id === savedOrder.id ? savedOrder : o));
+      success('ההזמנה עודכנה בהצלחה!');
     } catch (err) {
       console.error('Failed to update order:', err);
+      throw err;
     }
   };
 
@@ -396,7 +398,7 @@ const App: React.FC = () => {
       success('ההזמנה נוצרה בהצלחה!');
     } catch (err) {
       console.error('Failed to create order:', err);
-      alert('שגיאה ביצירת ההזמנה. אנא נסה שוב.');
+      throw err;
     }
   };
 

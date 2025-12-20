@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../../types';
-import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText, Pencil } from 'lucide-react';
 
 interface OrdersTableProps {
     orders: Order[];
     onUpdateStatus: (order: Order) => void;
+    onEdit: (order: Order) => void;
 }
 
 const statusColors: Record<OrderStatus, string> = {
@@ -23,7 +24,7 @@ const statusLabels: Record<OrderStatus, string> = {
     'cancelled': 'בוטל',
 };
 
-const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus }) => {
+const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdit }) => {
     const [ expandedOrderId, setExpandedOrderId ] = useState<string | null>(null);
 
     const toggleExpand = (id: string) => {
@@ -89,8 +90,16 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus }) => 
                                                 </a>
                                             )}
                                             <button
+                                                onClick={() => onEdit(order)}
+                                                className="p-2 hover:bg-blue-50 rounded-full text-blue-600 transition-colors"
+                                                title="ערוך הזמנה"
+                                            >
+                                                <Pencil className="w-5 h-5" />
+                                            </button>
+                                            <button
                                                 onClick={() => toggleExpand(order.id)}
                                                 className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+                                                title="צפה בפרטים"
                                             >
                                                 {expandedOrderId === order.id ? <ChevronUp className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                             </button>

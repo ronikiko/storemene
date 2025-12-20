@@ -88,6 +88,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [ editingPriceList, setEditingPriceList ] = useState<PriceList | null>(null);
 
   const [ isOrderModalOpen, setIsOrderModalOpen ] = useState(false);
+  const [ editingOrder, setEditingOrder ] = useState<Order | null>(null);
 
   // Delete Confirmation Modal State
   const [ deleteConfirm, setDeleteConfirm ] = useState<{
@@ -107,6 +108,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSaveCategory = (c: Category) => editingCategory ? onEditCategory(c) : onAddCategory(c);
   const handleSaveCustomer = (c: Customer) => editingCustomer ? onEditCustomer(c) : onAddCustomer(c);
   const handleSavePriceList = (pl: PriceList) => editingPriceList ? onEditPriceList(pl) : onAddPriceList(pl);
+  const handleSaveOrder = (o: Order) => editingOrder ? onUpdateOrder(o) : onAddOrder(o);
 
   // Delete Handlers with Confirmation
   const handleDeleteClick = (type: 'product' | 'category' | 'customer' | 'pricelist', id: number | string, name: string) => {
@@ -514,7 +516,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 if (activeTab === 'categories') { setEditingCategory(null); setIsCategoryModalOpen(true); }
                 if (activeTab === 'customers') { setEditingCustomer(null); setIsCustomerModalOpen(true); }
                 if (activeTab === 'pricelists') { setEditingPriceList(null); setIsPriceListModalOpen(true); }
-                if (activeTab === 'orders') { setIsOrderModalOpen(true); }
+                if (activeTab === 'orders') { setEditingOrder(null); setIsOrderModalOpen(true); }
               }}
               className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
@@ -672,7 +674,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {activeTab === 'orders' && (
             <div className="p-4 bg-gray-50 border-t border-gray-100">
-              <OrdersTable orders={paginationInfo.data} onUpdateStatus={onUpdateOrder} />
+              <OrdersTable orders={paginationInfo.data} onUpdateStatus={onUpdateOrder} onEdit={(order) => { setEditingOrder(order); setIsOrderModalOpen(true); }} />
             </div>
           )}
 
@@ -802,9 +804,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <OrderFormModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
-        onSave={onAddOrder}
+        onSave={handleSaveOrder}
         customers={customers}
         products={products}
+        orderToEdit={editingOrder}
       />
 
       <DeleteConfirmModal
