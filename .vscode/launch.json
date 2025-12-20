@@ -1,0 +1,51 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Server",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/server/src/index.js",
+            "cwd": "${workspaceFolder}/server",
+            "env": {
+                "PORT": "3001"
+            },
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Debug Frontend",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/frontend",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/*"
+            }
+        },
+        {
+            "name": "Full Stack",
+            "type": "node",
+            "request": "launch",
+            "compounds": [
+                {
+                    "name": "Debug Server",
+                    "presentation": {
+                        "group": "backend",
+                        "order": 1
+                    }
+                },
+                {
+                    "name": "Debug Frontend",
+                    "presentation": {
+                        "group": "frontend",
+                        "order": 2
+                    }
+                }
+            ]
+        }
+    ]
+}
