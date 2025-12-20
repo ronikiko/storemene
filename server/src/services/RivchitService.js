@@ -37,7 +37,6 @@ class RivchitService {
 
 	async createNewOrder(orderData) {
 		const documentType = await this.documentsType('ORDER')
-		console.log(documentType.document_type)
 		const res = await fetch(
 			'https://api.rivhit.co.il/online/RivhitOnlineAPI.svc/Document.New',
 			{
@@ -68,7 +67,6 @@ class RivchitService {
 		if (data.error_code === 0) {
 			return data.data
 		}
-		console.log('res', data)
 	}
 
 	async customersTypesList() {

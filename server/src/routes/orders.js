@@ -74,26 +74,6 @@ router.post('/', async (req, res) => {
 			)
 			const orderData = { customerName, items }
 			const rivhitRes = await rivchitService.createNewOrder(orderData)
-			// const rivhitRes = await rivhitApi.postOnlineRivhitonlineapiSvcDocumentNew(
-			// 	{
-			// 		items: [
-			// 			...items.map((item, index) => ({
-			// 				item_id: index + 1,
-			// 				catalog_number: item.productId,
-			// 				quantity: item.quantity,
-			// 				price_nis: item.price,
-			// 				price_mtc: item.price,
-			// 				description: item.title,
-			// 			})),
-			// 		],
-			// 		api_token: 'DECD03E5-E35C-41E8-84F7-FBA2FB483928',
-			// 		first_name: customerName,
-			// 		last_name: 'israel',
-			// 		customer_id: 0,
-			// 		document_type: 7,
-			// 	}
-			// )
-			console.log('Rivhit API Response:', rivhitRes)
 
 			if (rivhitRes?.document_link) {
 				await db

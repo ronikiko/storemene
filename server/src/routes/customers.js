@@ -2,14 +2,15 @@ import express from 'express'
 import { db } from '../db/index.js'
 import { customers } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
-import { rivchitService } from '../services/RivchitService.js'
+// import { rivchitService } from '../services/RivchitService.js'
 
 const router = express.Router()
 
 // GET all customers
 router.get('/', async (req, res) => {
-	const customersList = await rivchitService.customersList()
-	console.log(customersList)
+	// TODO: ask avi if he wants the consomer list from rivchit
+	// if yes, implement it
+	// const customersList = await rivchitService.customersList()
 	try {
 		const allCustomers = await db.select().from(customers)
 		res.json(allCustomers)

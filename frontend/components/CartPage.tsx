@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CartItem } from '../types';
-import { Trash2, Plus, Minus, ArrowRight, MessageCircle, ShieldCheck, AlertTriangle, X } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, MessageCircle, ShieldCheck, AlertTriangle, X, Loader2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 interface CartPageProps {
@@ -18,6 +18,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
   const [ customerPhone, setCustomerPhone ] = useState('');
   const [ address, setAddress ] = useState('');
   const [ itemToRemove, setItemToRemove ] = useState<number | null>(null);
+  const [ isSubmitting, setIsSubmitting ] = useState(false);
   const { error } = useToast();
 
   const subtotal = useMemo(() => {
@@ -55,6 +56,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
     };
 
     // 1. Save to database
+    setIsSubmitting(true);
     try {
       await onPlaceOrder(newOrder);
 
@@ -80,6 +82,8 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
     } catch (err) {
       console.error('Failed to create order:', err);
       alert('שגיאה ביצירת ההזמנה. אנא נסה שוב.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -236,10 +240,15 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
 
             <button
               onClick={handleCheckout}
-              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-4 rounded-xl shadow-md transition-all hover:shadow-lg flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className={`w-full ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#25D366] hover:bg-[#20bd5a]'} text-white font-bold py-4 rounded-xl shadow-md transition-all hover:shadow-lg flex items-center justify-center gap-2`}
             >
-              <MessageCircle className="w-5 h-5" />
-              שליחת הזמנה ב-WhatsApp
+              {isSubmitting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <MessageCircle className="w-5 h-5" />
+              )}
+              {isSubmitting ? 'מעבד הזמנה...' : 'שליחת הזמנה ב-WhatsApp'}
             </button>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
