@@ -5,6 +5,7 @@ import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
 import PriceListFormModal from './PriceListFormModal';
+import OrderFormModal from './OrderFormModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import OrdersTable from './OrdersTable';
 import { useToast } from '../../context/ToastContext';
@@ -33,6 +34,7 @@ interface AdminDashboardProps {
   onDeletePriceList: (id: string) => void;
 
   onUpdateOrder: (order: Order) => void;
+  onAddOrder: (order: Order) => void;
 
   showPrices: boolean;
   onUpdateShowPrices: (value: boolean) => void;
@@ -57,7 +59,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddCategory, onEditCategory, onDeleteCategory,
   onAddCustomer, onEditCustomer, onDeleteCustomer,
   onAddPriceList, onEditPriceList, onDeletePriceList,
-  onUpdateOrder,
+  onUpdateOrder, onAddOrder,
   showPrices, onUpdateShowPrices,
   onLogout, onGoHome
 }) => {
@@ -84,6 +86,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const [ isPriceListModalOpen, setIsPriceListModalOpen ] = useState(false);
   const [ editingPriceList, setEditingPriceList ] = useState<PriceList | null>(null);
+
+  const [ isOrderModalOpen, setIsOrderModalOpen ] = useState(false);
 
   // Delete Confirmation Modal State
   const [ deleteConfirm, setDeleteConfirm ] = useState<{
@@ -510,6 +514,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 if (activeTab === 'categories') { setEditingCategory(null); setIsCategoryModalOpen(true); }
                 if (activeTab === 'customers') { setEditingCustomer(null); setIsCustomerModalOpen(true); }
                 if (activeTab === 'pricelists') { setEditingPriceList(null); setIsPriceListModalOpen(true); }
+                if (activeTab === 'orders') { setIsOrderModalOpen(true); }
               }}
               className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
@@ -793,6 +798,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         products={products}
         onClose={() => setIsPriceListModalOpen(false)}
         onSave={handleSavePriceList}
+      />
+      <OrderFormModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        onSave={onAddOrder}
+        customers={customers}
+        products={products}
       />
 
       <DeleteConfirmModal

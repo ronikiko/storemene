@@ -389,6 +389,17 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAddOrder = async (order: Order) => {
+    try {
+      const savedOrder = await ordersApi.create(order);
+      setOrders(prev => [ savedOrder, ...prev ]);
+      success('ההזמנה נוצרה בהצלחה!');
+    } catch (err) {
+      console.error('Failed to create order:', err);
+      alert('שגיאה ביצירת ההזמנה. אנא נסה שוב.');
+    }
+  };
+
   const renderLogin = () => <AdminLogin onLogin={handleLogin} onBack={() => navigate('/')} />;
 
   const renderAdmin = () => {
@@ -418,6 +429,7 @@ const App: React.FC = () => {
         onDeletePriceList={handleDeletePriceList}
 
         onUpdateOrder={handleUpdateOrder}
+        onAddOrder={handleAddOrder}
 
         showPrices={showPrices}
         onUpdateShowPrices={handleUpdateShowPrices}
