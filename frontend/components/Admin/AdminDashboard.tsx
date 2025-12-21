@@ -807,6 +807,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         onSave={handleSaveOrder}
         customers={customers}
         products={products}
+        priceLists={priceLists}
         orderToEdit={editingOrder}
       />
 

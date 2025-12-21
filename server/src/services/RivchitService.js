@@ -50,6 +50,8 @@ class RivchitService {
 					last_name: orderData.customerLastName || orderData.customerName,
 					customer_id: 0,
 					document_type: documentType.document_type,
+					price_include_vat: true,
+					discount_value: orderData.discountPercent || 0,
 					items: [
 						...orderData.items.map((item, index) => ({
 							item_id: index + 1,
@@ -57,6 +59,7 @@ class RivchitService {
 							catalog_number: item.productId,
 							price_nis: item.price,
 							price_mtc: item.price,
+							discount_percent: item.discountPercent || 0,
 							description: item.title,
 						})),
 					],

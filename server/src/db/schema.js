@@ -68,6 +68,7 @@ export const orders = pgTable('orders', {
 	customerPhone: text('customer_phone'),
 	customerAddress: text('customer_address'),
 	totalAmount: real('total_amount').notNull(),
+	discountPercent: real('discount_percent').notNull().default(0),
 	status: text('status').notNull().default('pending'),
 	documentLink: text('document_link'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -81,6 +82,7 @@ export const orderItems = pgTable('order_items', {
 	title: text('title').notNull(),
 	quantity: integer('quantity').notNull(),
 	price: real('price').notNull(),
+	discountPercent: real('discount_percent').notNull().default(0),
 	total: real('total').notNull(),
 	imageUrl: text('image_url').notNull(),
 })

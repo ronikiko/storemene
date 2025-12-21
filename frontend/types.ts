@@ -45,6 +45,7 @@ export interface OrderItem {
   price: number;
   total: number;
   imageUrl: string;
+  discountPercent: number;
 }
 
 export interface Order {
@@ -55,6 +56,7 @@ export interface Order {
   customerAddress?: string;
   items: OrderItem[];
   totalAmount: number;
+  discountPercent: number;
   status: OrderStatus;
   documentLink?: string;
   createdAt: string;

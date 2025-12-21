@@ -43,6 +43,7 @@ router.post('/', async (req, res) => {
 			customerAddress,
 			items,
 			totalAmount,
+			discountPercent,
 			status,
 		} = req.body
 
@@ -56,6 +57,7 @@ router.post('/', async (req, res) => {
 				customerPhone,
 				customerAddress,
 				totalAmount,
+				discountPercent: discountPercent || 0,
 				status: status || 'pending',
 			})
 			.returning()
@@ -70,12 +72,13 @@ router.post('/', async (req, res) => {
 						title: item.title,
 						quantity: item.quantity,
 						price: item.price,
+						discountPercent: item.discountPercent || 0,
 						total: item.total,
 						imageUrl: item.imageUrl,
 					})
 				)
 			)
-			const orderData = { customerName, items }
+			const orderData = { customerName, items, totalAmount, discountPercent }
 			const rivhitRes = await rivchitService.createNewOrder(orderData)
 
 			if (rivhitRes?.document_link) {
@@ -113,6 +116,7 @@ router.put('/:id', async (req, res) => {
 			customerAddress,
 			items,
 			totalAmount,
+			discountPercent,
 			status,
 		} = req.body
 		const orderId = req.params.id
@@ -126,6 +130,7 @@ router.put('/:id', async (req, res) => {
 				customerPhone,
 				customerAddress,
 				totalAmount,
+				discountPercent: discountPercent || 0,
 				status,
 			})
 			.where(eq(orders.id, orderId))
@@ -148,6 +153,7 @@ router.put('/:id', async (req, res) => {
 							title: item.title,
 							quantity: item.quantity,
 							price: item.price,
+							discountPercent: item.discountPercent || 0,
 							total: item.total,
 							imageUrl: item.imageUrl,
 						})

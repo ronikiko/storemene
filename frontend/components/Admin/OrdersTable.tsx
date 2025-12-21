@@ -122,7 +122,16 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdi
                                                                 )}
                                                                 <span>{item.quantity}x {item.title}</span>
                                                             </div>
-                                                            <span className="font-medium">₪{item.total.toFixed(2)}</span>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="font-medium">
+                                                                    {item.discountPercent > 0 && (
+                                                                        <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-md ml-2">
+                                                                            -{item.discountPercent}%
+                                                                        </span>
+                                                                    )}
+                                                                    ₪{item.total.toFixed(2)}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -130,8 +139,15 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdi
                                                     <div className="text-sm text-gray-500">
                                                         <strong>כתובת למשלוח:</strong> {order.customerAddress || 'איסוף עצמי'}
                                                     </div>
-                                                    <div className="text-lg font-black">
-                                                        סה"כ: ₪{order.totalAmount.toFixed(2)}
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        {order.discountPercent > 0 && (
+                                                            <div className="text-sm text-red-500 font-medium">
+                                                                הנחה כללית: {order.discountPercent}%-
+                                                            </div>
+                                                        )}
+                                                        <div className="text-lg font-black">
+                                                            סה"כ: ₪{order.totalAmount.toFixed(2)}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

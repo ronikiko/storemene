@@ -24,8 +24,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
     return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [ cartItems ]);
 
-  const shippingCost = subtotal > 199 ? 0 : 30;
-  const total = subtotal + shippingCost;
+  const total = subtotal;
 
   const handleCheckout = async () => {
 
@@ -183,14 +182,6 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
                 <div className="flex justify-between text-gray-600">
                   <span>סכום ביניים</span>
                   <span>₪{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>משלוח</span>
-                  {shippingCost === 0 ? (
-                    <span className="text-green-600 font-medium">חינם</span>
-                  ) : (
-                    <span>₪{shippingCost}</span>
-                  )}
                 </div>
                 <div className="flex justify-between text-xl font-black mt-4 pt-4 border-t border-black/5">
                   <span>סה"כ לתשלום</span>

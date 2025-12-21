@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Product, Customer, Order, OrderItem, OrderStatus } from '../../types';
+import { Product, Customer, Order, OrderItem, OrderStatus, PriceList } from '../../types';
 import { X, Plus, Trash2, Search, Loader2 } from 'lucide-react';
 
 interface OrderFormModalProps {
@@ -8,16 +8,18 @@ interface OrderFormModalProps {
     onSave: (order: Order) => void;
     customers: Customer[];
     products: Product[];
+    priceLists: PriceList[];
     orderToEdit?: Order | null;
 }
 
-const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave, customers, products, orderToEdit }) => {
+const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave, customers, products, priceLists, orderToEdit }) => {
     const [ selectedCustomerId, setSelectedCustomerId ] = useState<string>('');
     const [ orderItems, setOrderItems ] = useState<OrderItem[]>([]);
     const [ status, setStatus ] = useState<OrderStatus>('pending');
     const [ address, setAddress ] = useState('');
     const [ searchTerm, setSearchTerm ] = useState('');
     const [ isSubmitting, setIsSubmitting ] = useState(false);
+    const [ globalDiscountPercent, setGlobalDiscountPercent ] = useState<number>(0);
 
     useEffect(() => {
         if (orderToEdit) {
@@ -25,11 +27,13 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
             setOrderItems(orderToEdit.items);
             setStatus(orderToEdit.status);
             setAddress(orderToEdit.customerAddress || '');
+            setGlobalDiscountPercent(orderToEdit.discountPercent || 0);
         } else {
             setSelectedCustomerId('');
             setOrderItems([]);
             setStatus('pending');
             setAddress('');
+            setGlobalDiscountPercent(0);
         }
     }, [ orderToEdit, isOpen ]);
 
@@ -38,22 +42,47 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
         [ customers, selectedCustomerId ]
     );
 
+    const getPriceForCustomer = (product: Product, customer?: Customer) => {
+        if (customer?.priceListId) {
+            const priceList = priceLists.find(pl => pl.id === customer.priceListId);
+            if (priceList && priceList.prices[ product.id ] !== undefined) {
+                return priceList.prices[ product.id ];
+            }
+        }
+        return product.price;
+    };
+
+    // Update prices when customer changes
+    useEffect(() => {
+        if (!isOpen || !selectedCustomer) return;
+
+        setOrderItems(prev => prev.map(item => {
+            const product = products.find(p => p.id === item.productId);
+            if (product) {
+                const newPrice = getPriceForCustomer(product, selectedCustomer);
+                return { ...item, price: newPrice, total: (item.quantity * newPrice) * (1 - (item.discountPercent || 0) / 100) };
+            }
+            return item;
+        }));
+    }, [ selectedCustomerId ]);
+
     const filteredProducts = useMemo(() =>
         products.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase())),
         [ products, searchTerm ]
     );
 
-    const totalAmount = useMemo(() =>
-        orderItems.reduce((acc, item) => acc + item.total, 0),
-        [ orderItems ]
-    );
+    const totalAmount = useMemo(() => {
+        const itemsTotal = orderItems.reduce((acc, item) => acc + item.total, 0);
+        return itemsTotal * (1 - globalDiscountPercent / 100);
+    }, [ orderItems, globalDiscountPercent ]);
 
     const handleAddProduct = (product: Product) => {
+        const price = getPriceForCustomer(product, selectedCustomer);
         const existingItem = orderItems.find(item => item.productId === product.id);
         if (existingItem) {
             setOrderItems(orderItems.map(item =>
                 item.productId === product.id
-                    ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.price }
+                    ? { ...item, quantity: item.quantity + 1, total: ((item.quantity + 1) * price) * (1 - (item.discountPercent || 0) / 100), price }
                     : item
             ));
         } else {
@@ -61,8 +90,9 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
                 productId: product.id,
                 title: product.title,
                 quantity: 1,
-                price: product.price,
-                total: product.price,
+                price: price,
+                discountPercent: 0,
+                total: price,
                 imageUrl: product.imageUrl
             } ]);
         }
@@ -79,7 +109,15 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
         }
         setOrderItems(orderItems.map(item =>
             item.productId === productId
-                ? { ...item, quantity, total: quantity * item.price }
+                ? { ...item, quantity, total: (quantity * item.price) * (1 - (item.discountPercent || 0) / 100) }
+                : item
+        ));
+    };
+
+    const handleUpdateItemDiscount = (productId: number, discountPercent: number) => {
+        setOrderItems(orderItems.map(item =>
+            item.productId === productId
+                ? { ...item, discountPercent, total: (item.quantity * item.price) * (1 - discountPercent / 100) }
                 : item
         ));
     };
@@ -105,6 +143,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
                 customerAddress: address,
                 items: orderItems,
                 totalAmount,
+                discountPercent: globalDiscountPercent,
                 status,
                 createdAt: orderToEdit ? orderToEdit.createdAt : new Date().toISOString()
             };
@@ -241,14 +280,26 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
                                                 <div className="text-xs text-gray-500">₪{item.price.toFixed(2)} ליחידה</div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-6">
+                                        <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-2">
+                                                <label className="text-[10px] text-gray-400 font-bold uppercase">כמות</label>
                                                 <input
                                                     type="number"
                                                     min="1"
                                                     value={item.quantity}
                                                     onChange={(e) => handleUpdateQuantity(item.productId, parseInt(e.target.value) || 0)}
-                                                    className="w-16 bg-white border border-gray-200 rounded px-2 py-1 text-center text-sm"
+                                                    className="w-14 bg-white border border-gray-200 rounded px-2 py-1 text-center text-sm"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-[10px] text-gray-400 font-bold uppercase">הנחה %</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={item.discountPercent || 0}
+                                                    onChange={(e) => handleUpdateItemDiscount(item.productId, parseInt(e.target.value) || 0)}
+                                                    className="w-14 bg-white border border-gray-200 rounded px-2 py-1 text-center text-sm"
                                                 />
                                             </div>
                                             <div className="w-24 text-left font-bold text-sm">₪{item.total.toFixed(2)}</div>
@@ -266,9 +317,22 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
                         </div>
 
                         {orderItems.length > 0 && (
-                            <div className="mt-6 flex justify-between items-center bg-black text-white p-4 rounded-xl">
-                                <span className="font-bold">סה"כ לתשלום</span>
-                                <span className="text-xl font-black">₪{totalAmount.toFixed(2)}</span>
+                            <div className="mt-6 flex flex-col gap-3">
+                                <div className="flex justify-end items-center gap-3 pr-1">
+                                    <label className="text-sm font-medium text-gray-600">הנחה כללית להזמנה (%):</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={globalDiscountPercent}
+                                        onChange={(e) => setGlobalDiscountPercent(parseInt(e.target.value) || 0)}
+                                        className="w-20 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-black outline-none font-bold"
+                                    />
+                                </div>
+                                <div className="flex justify-between items-center bg-black text-white p-4 rounded-xl">
+                                    <span className="font-bold">סה"כ לתשלום</span>
+                                    <span className="text-xl font-black">₪{totalAmount.toFixed(2)}</span>
+                                </div>
                             </div>
                         )}
                     </div>
