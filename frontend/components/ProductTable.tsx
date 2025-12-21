@@ -1,15 +1,17 @@
 import React from 'react';
-import { Product } from '../types';
+import { Product, Category } from '../types';
 import { ShoppingCart, Eye } from 'lucide-react';
 
 interface ProductTableProps {
     products: (Product & { isSpecialPrice?: boolean })[];
+    categories: Category[];
     onAddToCart: (product: Product) => void;
     onQuickView: (product: Product) => void;
     showPrices?: boolean;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQuickView, showPrices = true }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, categories, onAddToCart, onQuickView, showPrices = true }) => {
+
     return (
         <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-coffee-100">
             <table className="w-full text-right">
@@ -36,7 +38,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQu
                                 </div>
                             </td>
                             <td className="hidden md:table-cell px-6 py-4 text-sm text-coffee-700">
-                                {product.category}
+                                {categories && categories.find((category) => category.id === product.category)?.name}
                             </td>
                             {showPrices && (
                                 <td className="px-3 md:px-6 py-4">
@@ -66,7 +68,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, onAddToCart, onQu
                                         className="p-2 bg-coffee-900 text-white hover:bg-coffee-800 rounded-full transition-colors shadow-sm"
                                         title="הוסף לסל"
                                     >
-                                        <ShoppingCart className="w-5 h-5" />
+                                        <ShoppingCart className="w-3 h-3" />
                                     </button>
                                 </div>
                             </td>

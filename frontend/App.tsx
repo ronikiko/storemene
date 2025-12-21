@@ -563,6 +563,7 @@ const App: React.FC = () => {
               ) : (
                 <ProductTable
                   products={filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(p => getEffectiveProductInfo(p))}
+                  categories={categories}
                   onAddToCart={handleAddToCart}
                   onQuickView={setQuickViewProduct}
                   showPrices={showPrices}
