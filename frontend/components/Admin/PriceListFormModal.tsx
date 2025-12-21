@@ -17,6 +17,7 @@ const PriceListFormModal: React.FC<PriceListFormModalProps> = ({ isOpen, priceLi
     prices: {}
   });
   const [ searchTerm, setSearchTerm ] = useState('');
+  const [ globalPercent, setGlobalPercent ] = useState<string>('0');
 
   useEffect(() => {
     if (priceListToEdit) {
@@ -52,6 +53,33 @@ const PriceListFormModal: React.FC<PriceListFormModalProps> = ({ isOpen, priceLi
       newPrices[ productId ] = parseFloat(price);
     }
     setFormData({ ...formData, prices: newPrices });
+  };
+
+  const handlePercentChange = (product: Product, percentStr: string) => {
+    if (percentStr === '') {
+      handlePriceChange(product.id, '');
+      return;
+    }
+    const percent = parseFloat(percentStr);
+    const newPrice = Math.round((product.price * (1 + percent / 100)) * 10) / 10;
+    handlePriceChange(product.id, newPrice.toString());
+  };
+
+  const handleApplyGlobal = () => {
+    const percent = parseFloat(globalPercent);
+    if (isNaN(percent)) return;
+
+    const newPrices: Record<number, number> = {};
+    products.forEach(p => {
+      newPrices[ p.id ] = Math.round((p.price * (1 + percent / 100)) * 10) / 10;
+    });
+    setFormData({ ...formData, prices: newPrices });
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm('האם אתה בטוח שברצונך לנקות את כל המחירים המיוחדים?')) {
+      setFormData({ ...formData, prices: {} });
+    }
   };
 
   const filteredProducts = products.filter(p => p.title.includes(searchTerm));
@@ -100,15 +128,40 @@ const PriceListFormModal: React.FC<PriceListFormModalProps> = ({ isOpen, priceLi
           <div className="p-4 flex-1 overflow-hidden flex flex-col">
             <h4 className="font-bold mb-2">תמחור מוצרים</h4>
 
-            <div className="relative mb-3">
-              <input
-                type="text"
-                placeholder="חפש מוצר..."
-                className="w-full pl-4 pr-10 py-2 border rounded-lg"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <div className="flex gap-3 mb-4">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="חפש מוצר..."
+                  className="w-full pl-4 pr-10 py-2 border rounded-lg"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              </div>
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1">
+                <label className="text-xs font-bold text-gray-500">שינוי גלובלי %</label>
+                <input
+                  type="number"
+                  className="w-16 bg-white border border-gray-300 rounded px-2 py-1 text-sm font-bold"
+                  value={globalPercent}
+                  onChange={(e) => setGlobalPercent(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyGlobal}
+                  className="text-xs bg-black text-white px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  החל לכולם
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-md hover:bg-red-100 transition-colors"
+                >
+                  נקה הכל
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto border rounded-lg custom-scrollbar">
@@ -117,6 +170,7 @@ const PriceListFormModal: React.FC<PriceListFormModalProps> = ({ isOpen, priceLi
                   <tr>
                     <th className="p-3">מוצר</th>
                     <th className="p-3">מחיר בסיס</th>
+                    <th className="p-3 text-center">שינוי %</th>
                     <th className="p-3">מחיר מיוחד</th>
                   </tr>
                 </thead>
@@ -130,6 +184,15 @@ const PriceListFormModal: React.FC<PriceListFormModalProps> = ({ isOpen, priceLi
                           <span>{product.title}</span>
                         </td>
                         <td className="p-3 text-sm text-gray-500">₪{product.price}</td>
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            placeholder="0%"
+                            className="w-20 px-2 py-1 border border-gray-200 rounded text-sm text-center"
+                            value={hasCustomPrice ? Math.round(((formData.prices[ product.id ] / product.price) - 1) * 100) : ''}
+                            onChange={(e) => handlePercentChange(product, e.target.value)}
+                          />
+                        </td>
                         <td className="p-3">
                           <input
                             type="number"

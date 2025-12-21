@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, Category, Customer, PriceList, Order } from '../../types';
-import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign, Search, ShoppingBag } from 'lucide-react';
+import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign, Search, ShoppingBag, X } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
@@ -89,6 +89,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const [ isOrderModalOpen, setIsOrderModalOpen ] = useState(false);
   const [ editingOrder, setEditingOrder ] = useState<Order | null>(null);
+
+  const [ viewingPriceListCustomers, setViewingPriceListCustomers ] = useState<PriceList | null>(null);
 
   // Delete Confirmation Modal State
   const [ deleteConfirm, setDeleteConfirm ] = useState<{
@@ -326,7 +328,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       // Check if text contains Hebrew characters, if not try different encoding
       const hasHebrew = /[\u0590-\u05FF]/.test(text);
 
-      if (!hasHebrew && /[�\x00-\x1F\x7F-\x9F]/.test(text)) {
+      if (!hasHebrew && /[\x00-\x1F\x7F-\x9F]/.test(text)) {
         // Text has gibberish/control characters but no Hebrew - try windows-1255
         alert('הקובץ לא מקודד ב-UTF-8. אנא שמור את הקובץ כ-"CSV UTF-8" ב-Excel ונסה שוב.');
         return;
@@ -661,6 +663,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <td className="px-6 py-4 text-sm">{Object.keys(pl.prices).length}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => setViewingPriceListCustomers(pl)}
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-full"
+                            title="צפה בלקוחות משויכים"
+                          >
+                            <Users className="w-4 h-4" />
+                          </button>
                           <button onClick={() => { setEditingPriceList(pl); setIsPriceListModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
                           <button onClick={() => handleDeleteClick('pricelist', pl.id, pl.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
                         </div>
@@ -819,6 +828,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />
+      {/* Price List Customers Modal */}
+      {viewingPriceListCustomers && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setViewingPriceListCustomers(null)} />
+          <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold">לקוחות המשויכים למחירון: {viewingPriceListCustomers.name}</h3>
+              <button onClick={() => setViewingPriceListCustomers(null)} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 max-h-[60vh] overflow-y-auto">
+              {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).length > 0 ? (
+                <div className="space-y-3">
+                  {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).map(customer => (
+                    <div key={customer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div>
+                        <div className="font-bold text-gray-900">{customer.name}</div>
+                        <div className="text-xs text-gray-500">{customer.email}</div>
+                      </div>
+                      <div className="text-sm font-medium text-gray-700">{customer.phone}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                  <p>אין לקוחות משויכים למחירון זה</p>
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => setViewingPriceListCustomers(null)}
+                className="w-full bg-black text-white font-bold py-2.5 rounded-xl hover:bg-gray-800 transition-colors"
+              >
+                סגור
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
