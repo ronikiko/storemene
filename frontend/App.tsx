@@ -713,7 +713,7 @@ const App: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">שגיאה בטעינת הנתונים</h2>
             <p className="text-gray-600 mb-4">{error}</p>
             <p className="text-sm text-gray-500 mb-4">
-              ודא שהשרת פועל על http://localhost:3001
+              אנא ודא שהשרת פועל ושיש לך חיבור לאינטרנט.
             </p>
             <button
               onClick={() => window.location.reload()}

@@ -236,20 +236,20 @@ const OrderPicker: React.FC = () => {
             </div>
 
             {/* Footer Summary & Action */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 glass border-t border-coffee-100/50">
-                <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-8">
-                        <div className="text-right">
-                            <div className="text-[10px] font-black text-coffee-400 uppercase tracking-widest">סה"כ פריטים</div>
+            <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 glass border-t border-coffee-100/50 z-50">
+                <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-4 sm:gap-8 w-full sm:w-auto">
+                        <div className="text-center sm:text-right">
+                            <div className="text-[10px] font-black text-coffee-400 uppercase tracking-widest mb-1">פריטים</div>
                             <div className="text-xl font-black text-coffee-950">{items.length}</div>
                         </div>
-                        <div className="w-px h-8 bg-coffee-100" />
-                        <div className="text-right text-green-600">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-coffee-400">נאספו</div>
+                        <div className="text-center sm:text-right text-green-600 border-x border-coffee-100 sm:border-none px-2">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-coffee-400 mb-1">נאספו</div>
                             <div className="text-xl font-black">{Object.values(itemsStatus).filter(s => s === 'collected').length}</div>
                         </div>
-                        <div className="text-right text-red-600">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-coffee-400">חסר</div>
+                        <div className="text-center sm:text-right text-red-600">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-coffee-400 mb-1">חסר</div>
                             <div className="text-xl font-black">{Object.values(itemsStatus).filter(s => s === 'out_of_stock').length}</div>
                         </div>
                     </div>
@@ -257,12 +257,17 @@ const OrderPicker: React.FC = () => {
                     <button
                         onClick={handleComplete}
                         disabled={isSubmitting || pendingCount > 0}
-                        className={`flex items-center gap-3 px-12 py-5 rounded-[2rem] font-black text-lg transition-all shadow-2xl ${pendingCount > 0
+                        className={`flex items-center justify-center gap-3 w-full sm:w-auto px-12 py-5 rounded-[2rem] font-black text-lg transition-all shadow-2xl ${pendingCount > 0
                             ? 'bg-coffee-100 text-coffee-300 cursor-not-allowed opacity-50'
                             : 'bg-coffee-900 text-white hover:scale-105 active:scale-95 shadow-coffee-200'
                             }`}
                     >
-                        {isSubmitting ? 'מעדכן...' : (
+                        {isSubmitting ? (
+                            <div className="flex items-center gap-2">
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>מעדכן...</span>
+                            </div>
+                        ) : (
                             <>
                                 <span>שגר הזמנה</span>
                                 <Send className="w-6 h-6" />
