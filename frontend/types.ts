@@ -36,7 +36,7 @@ export interface Customer {
   token: string;
 }
 
-export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'processing' | 'ready_for_shipping' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface OrderItem {
   productId: number;
@@ -46,6 +46,8 @@ export interface OrderItem {
   total: number;
   imageUrl: string;
   discountPercent: number;
+  pickingStatus?: 'pending' | 'collected' | 'out_of_stock';
+  pickedQuantity?: number;
 }
 
 export interface Order {
@@ -59,5 +61,7 @@ export interface Order {
   discountPercent: number;
   status: OrderStatus;
   documentLink?: string;
+  pickingToken?: string;
+  whatsAppLink?: string;
   createdAt: string;
 }

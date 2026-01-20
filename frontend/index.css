@@ -1,14 +1,37 @@
 @layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+	.glass {
+		background: rgba(255, 255, 255, 0.7);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+	}
+	.glass-dark {
+		background: rgba(45, 27, 23, 0.8);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
 }
 
 body {
-  background-color: #fdfbf7; /* cream */
-  color: #432c25; /* coffee-900 */
+	background-color: #fdfbf7; /* pearl */
+	color: #2d1b17; /* coffee-900 */
+	-webkit-tap-highlight-color: transparent;
+}
+
+.premium-shadow {
+	box-shadow:
+		0 10px 30px -5px rgba(45, 27, 23, 0.1),
+		0 4px 10px -3px rgba(45, 27, 23, 0.05);
+}
+
+.premium-gradient {
+	background: linear-gradient(135deg, #2d1b17 0%, #4a322c 100%);
 }

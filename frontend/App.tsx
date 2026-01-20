@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
+import BottomNav from './components/BottomNav';
 import { Routes, Route, useNavigate, useLocation, Navigate, useSearchParams } from 'react-router-dom';
 import CategoryNav from './components/CategoryNav';
 import ProductCard from './components/ProductCard';
@@ -9,10 +10,74 @@ import AdminLogin from './components/Admin/AdminLogin';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import ProductTable from './components/ProductTable';
 import Pagination from './components/Pagination';
+import OrderPicker from './components/OrderPicker';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { Product, CartItem, Category, Customer, PriceList, Order } from './types';
-import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter, Search } from 'lucide-react';
+import { Zap, AlertCircle, Lock, Users, LayoutGrid, List, Menu, Filter, Search, X } from 'lucide-react';
 import { productsApi, categoriesApi, customersApi, priceListsApi, authApi, settingsApi, ordersApi } from './services/api';
+
+interface LayoutProps {
+  children: React.ReactNode;
+  cartCount: number;
+  currentCustomerName: string | null;
+  cartAnimating: boolean;
+  isAdminAuthenticated: boolean;
+}
+
+const Layout: React.FC<LayoutProps> = ({
+  children,
+  cartCount,
+  currentCustomerName,
+  cartAnimating,
+  isAdminAuthenticated
+}) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activePath = location.pathname;
+  const activeTab = activePath === '/' ? 'home' :
+    activePath === '/checkout' ? 'cart' :
+      activePath === '/admin' || activePath === '/login' ? 'profile' : 'home';
+
+  const handleTabChange = (tabId: string) => {
+    if (tabId === 'home') navigate('/');
+    if (tabId === 'cart') navigate('/checkout');
+    if (tabId === 'profile') navigate(isAdminAuthenticated ? '/admin' : '/login');
+    if (tabId === 'categories') {
+      navigate('/');
+      setTimeout(() => {
+        document.querySelector('#category-nav')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    if (tabId === 'search') {
+      navigate('/');
+      setTimeout(() => {
+        document.querySelector('#search-input')?.scrollIntoView({ behavior: 'smooth' });
+        (document.querySelector('#search-input') as HTMLInputElement)?.focus();
+      }, 100);
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-pearl selection:bg-coffee-100">
+      <Header
+        cartCount={cartCount}
+        onCartClick={() => navigate('/checkout')}
+        onLogoClick={() => navigate('/')}
+        onUserClick={() => isAdminAuthenticated ? navigate('/admin') : navigate('/login')}
+        cartAnimating={cartAnimating}
+        customerName={currentCustomerName}
+      />
+      <main className="flex-grow pb-24 md:pb-8">
+        {children}
+      </main>
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        cartCount={cartCount}
+      />
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   // --- Data State (From Backend) ---
@@ -64,7 +129,7 @@ const App: React.FC = () => {
   const [ isMobileSidebarOpen, setIsMobileSidebarOpen ] = useState(false);
   const [ viewMode, setViewMode ] = useState<'grid' | 'table'>('grid');
   const [ currentPage, setCurrentPage ] = useState(1);
-  const itemsPerPage = viewMode === 'grid' ? 12 : 20;
+  const itemsPerPage = viewMode === 'grid' ? 24 : 30;
 
   // New Filters
   const [ sortBy, setSortBy ] = useState<string>('default');
@@ -110,6 +175,19 @@ const App: React.FC = () => {
     };
 
     fetchData();
+  }, []);
+
+  // --- Session Check ---
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        await authApi.getMe();
+        setIsAdminAuthenticated(true);
+      } catch (err) {
+        setIsAdminAuthenticated(false);
+      }
+    };
+    checkSession();
   }, []);
 
   // --- URL Customer Token Logic ---
@@ -162,13 +240,15 @@ const App: React.FC = () => {
   };
 
   const handleUpdateCartQuantity = (id: number, delta: number) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    }));
+    setCartItems(prev => {
+      const updated = prev.map(item => {
+        if (item.id === id) {
+          return { ...item, quantity: item.quantity + delta };
+        }
+        return item;
+      });
+      return updated.filter(item => item.quantity > 0);
+    });
   };
 
   const handleRemoveFromCart = (id: number) => {
@@ -200,6 +280,18 @@ const App: React.FC = () => {
   const handleLogin = () => {
     setIsAdminAuthenticated(true);
     navigate('/admin');
+    success('התחברת בהצלחה');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logoutAdmin();
+      setIsAdminAuthenticated(false);
+      navigate('/');
+      success('התנתקת בהצלחה');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
   };
 
   // Products
@@ -328,36 +420,40 @@ const App: React.FC = () => {
   };
 
   // --- Filtering & Sorting ---
-  const filteredProducts = products.filter(product => {
-    // 0. Search Term
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim();
-      const matchesTitle = product.title.toLowerCase().includes(searchLower);
-      const matchesCategory = categories.find(c => c.id === product.category)?.name.toLowerCase().includes(searchLower);
-      if (!matchesTitle && !matchesCategory) return false;
-    }
+  const filteredProducts = useMemo(() => {
+    const list = products.filter(product => {
+      // 0. Search Term
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase().trim();
+        const matchesTitle = product.title.toLowerCase().includes(searchLower);
+        const matchesCategory = categories.find(c => c.id === product.category)?.name.toLowerCase().includes(searchLower);
+        if (!matchesTitle && !matchesCategory) return false;
+      }
 
-    // 1. Category
-    if (selectedCategory && selectedCategory !== 'new' && product.category !== selectedCategory) return false;
-    if (selectedCategory === 'new' && !product.isNew) return false;
+      // 1. Category
+      if (selectedCategory && selectedCategory !== 'new' && product.category !== selectedCategory) return false;
+      if (selectedCategory === 'new' && !product.isNew) return false;
 
-    // 2. Status Filters
-    if (showOnlyNew && !product.isNew) return false;
-    if (showOnlySale && (!product.discount || product.discount <= 0)) return false;
+      // 2. Status Filters
+      if (showOnlyNew && !product.isNew) return false;
+      if (showOnlySale && (!product.discount || product.discount <= 0)) return false;
 
 
-    return true;
-  }).sort((a, b) => {
-    const priceA = getEffectiveProductInfo(a).price;
-    const priceB = getEffectiveProductInfo(b).price;
+      return true;
+    });
 
-    switch (sortBy) {
-      case 'price-asc': return priceA - priceB;
-      case 'price-desc': return priceB - priceA;
-      case 'name-asc': return a.title.localeCompare(b.title);
-      default: return 0; // 'default' order (usually by ID or added date)
-    }
-  });
+    return list.sort((a, b) => {
+      const priceA = getEffectiveProductInfo(a).price;
+      const priceB = getEffectiveProductInfo(b).price;
+
+      switch (sortBy) {
+        case 'price-asc': return priceA - priceB;
+        case 'price-desc': return priceB - priceA;
+        case 'name-asc': return a.title.localeCompare(b.title);
+        default: return 0; // 'default' order (usually by ID or added date)
+      }
+    });
+  }, [ products, searchTerm, categories, selectedCategory, showOnlyNew, showOnlySale, sortBy, customers, priceLists, activeCustomerId ]);
 
   // --- Quick View Navigation ---
   const handleNextProduct = () => {
@@ -397,6 +493,11 @@ const App: React.FC = () => {
       const savedOrder = await ordersApi.update(updatedOrder.id, updatedOrder);
       setOrders(prev => prev.map(o => o.id === savedOrder.id ? savedOrder : o));
       success('ההזמנה עודכנה בהצלחה!');
+
+      // If backend returned a WhatsApp link (meaning status changed to processing)
+      if (savedOrder.whatsAppLink) {
+        window.open(savedOrder.whatsAppLink, '_blank');
+      }
     } catch (err) {
       console.error('Failed to update order:', err);
       throw err;
@@ -448,27 +549,12 @@ const App: React.FC = () => {
         showPrices={showPrices}
         onUpdateShowPrices={handleUpdateShowPrices}
 
-        onLogout={() => { setIsAdminAuthenticated(false); navigate('/'); }}
+        onLogout={handleLogout}
         onGoHome={() => navigate('/')}
       />
     );
   };
 
-  const Layout = ({ children }: { children: React.ReactNode }) => (
-    <div className="flex flex-col min-h-screen">
-      <Header
-        cartCount={cartCount}
-        onCartClick={() => navigate('/checkout')}
-        onLogoClick={() => navigate('/')}
-        onUserClick={() => isAdminAuthenticated ? navigate('/admin') : navigate('/login')}
-        cartAnimating={cartAnimating}
-        customerName={currentCustomerName}
-      />
-      <main className="flex-grow">
-        {children}
-      </main>
-    </div>
-  );
 
   const renderCheckout = () => (
     <CartPage
@@ -485,9 +571,8 @@ const App: React.FC = () => {
   );
 
   const renderHome = () => (
-    <div className="min-h-screen pb-20 bg-gray-50 font-sans selection:bg-gray-200">
-
-      <div className="container mx-auto px-4 mt-4 mb-2">
+    <div className="min-h-screen pb-10 bg-pearl">
+      <div id="category-nav" className="container mx-auto px-4 mt-2 mb-2">
         <CategoryNav
           categories={categories}
           selectedCategory={selectedCategory}
@@ -495,52 +580,56 @@ const App: React.FC = () => {
         />
       </div>
 
-      <div className="container mx-auto px-4 py-4 flex gap-8">
+      <div className="container mx-auto px-4 py-4">
         {/* Main Content */}
-        <main className="flex-1 min-h-[600px] min-w-0">
+        <main className="min-h-[600px]">
           {/* Top Toolbar */}
-          <div className="bg-white p-4 rounded-xl border border-coffee-100 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start flex-1">
-              <span className="text-sm text-coffee-500 font-medium hidden md:block whitespace-nowrap">
-                {filteredProducts.length} מוצרים
+          <div className="glass p-4 rounded-3xl premium-shadow mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-4 w-full md:w-auto flex-1">
+              <span className="text-sm text-coffee-500 font-black hidden lg:block whitespace-nowrap bg-coffee-50 px-4 py-2 rounded-full">
+                {filteredProducts.length} פריטים בקטלוג
               </span>
 
               {/* Search Field */}
-              <div className="relative flex-1 w-full md:max-w-md md:mx-4">
+              <div className="relative flex-1 w-full md:max-w-xl">
                 <input
+                  id="search-input"
                   type="text"
-                  placeholder="חיפוש מוצרים..."
+                  placeholder="חפשי מוצר, קטגוריה או סגנון..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-4 pr-10 py-2 text-sm focus:ring-2 focus:ring-coffee-900 focus:border-transparent outline-none transition-all"
+                  className="w-full bg-white/50 border border-coffee-100 rounded-2xl pl-4 pr-12 py-3.5 text-sm focus:ring-4 focus:ring-coffee-100 focus:border-coffee-300 outline-none transition-all font-medium placeholder:text-coffee-300 shadow-inner"
                 />
-                <Search className="absolute right-3 top-2.5 w-4 h-4 text-gray-400" />
+                <Search className="absolute right-4 top-3.5 w-5 h-5 text-coffee-400" />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    className="absolute left-4 top-3.5 text-coffee-300 hover:text-coffee-600 transition-colors"
                   >
-                    ✕
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <span className="text-sm text-coffee-500 font-medium md:hidden whitespace-nowrap">
+
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+              <span className="text-xs text-coffee-400 font-bold lg:hidden">
                 {filteredProducts.length} מוצרים
               </span>
-              <div className="flex justify-end items-center gap-2 bg-coffee-50 rounded-lg p-1">
+              <div className="flex items-center gap-1.5 bg-coffee-100/30 p-1.5 rounded-2xl border border-coffee-100/50">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${viewMode === 'grid' ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:text-coffee-600'}`}
                 >
                   <LayoutGrid className="w-4 h-4" />
+                  <span className="hidden sm:inline">גלריה</span>
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white text-coffee-900 shadow-sm' : 'text-coffee-400 hover:text-coffee-600'}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${viewMode === 'table' ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:text-coffee-600'}`}
                 >
                   <List className="w-4 h-4" />
+                  <span className="hidden sm:inline">רשימה</span>
                 </button>
               </div>
             </div>
@@ -549,25 +638,31 @@ const App: React.FC = () => {
           {filteredProducts.length > 0 ? (
             <>
               {viewMode === 'grid' ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
                   {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => (
                     <ProductCard
                       key={product.id}
                       product={getEffectiveProductInfo(product)}
                       onAddToCart={handleAddToCart}
+                      onUpdateQuantity={handleUpdateCartQuantity}
+                      quantityInCart={cartItems.find(item => item.id === product.id)?.quantity}
                       onQuickView={setQuickViewProduct}
                       showPrices={showPrices}
                     />
                   ))}
                 </div>
               ) : (
-                <ProductTable
-                  products={filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(p => getEffectiveProductInfo(p))}
-                  categories={categories}
-                  onAddToCart={handleAddToCart}
-                  onQuickView={setQuickViewProduct}
-                  showPrices={showPrices}
-                />
+                <div className="glass rounded-[2rem] overflow-hidden premium-shadow">
+                  <ProductTable
+                    products={filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(p => getEffectiveProductInfo(p))}
+                    categories={categories}
+                    cartItems={cartItems}
+                    onAddToCart={handleAddToCart}
+                    onUpdateQuantity={handleUpdateCartQuantity}
+                    onQuickView={setQuickViewProduct}
+                    showPrices={showPrices}
+                  />
+                </div>
               )}
 
               {filteredProducts.length > itemsPerPage && (
@@ -579,10 +674,18 @@ const App: React.FC = () => {
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-coffee-400 bg-white rounded-2xl border border-coffee-50">
-              <AlertCircle className="w-16 h-16 mb-6 opacity-50" />
-              <p className="text-xl font-bold text-coffee-800">לא נמצאו מוצרים.</p>
-              <button onClick={handleClearFilters} className="mt-6 text-coffee-600 font-bold underline hover:text-coffee-900 hover:no-underline">נקה סינונים</button>
+            <div className="flex flex-col items-center justify-center py-24 text-coffee-400 glass rounded-[3rem] border border-coffee-100/50 premium-shadow">
+              <div className="w-24 h-24 bg-coffee-50 rounded-full flex items-center justify-center mb-8">
+                <Search className="w-10 h-10 text-coffee-200" />
+              </div>
+              <p className="text-2xl font-black text-coffee-900 mb-2">לא מצאנו את מה שחיפשת...</p>
+              <p className="text-coffee-500 font-medium mb-8 text-center max-w-sm">נסי לחפש מילה אחרת או לבדוק בקטגוריות השונות</p>
+              <button
+                onClick={handleClearFilters}
+                className="bg-coffee-900 text-white px-10 py-4 rounded-2xl font-black shadow-xl shadow-coffee-200 hover:scale-105 active:scale-95 transition-all"
+              >
+                ניקוי כל הסינונים
+              </button>
             </div>
           )}
         </main>
@@ -626,9 +729,28 @@ const App: React.FC = () => {
       {!isLoading && !error && (
         <>
           <Routes>
-            <Route path="/" element={<Layout>{renderHome()}</Layout>} />
-            <Route path="/checkout" element={<Layout>{renderCheckout()}</Layout>} />
+            <Route path="/" element={
+              <Layout
+                cartCount={cartCount}
+                currentCustomerName={currentCustomerName}
+                cartAnimating={cartAnimating}
+                isAdminAuthenticated={isAdminAuthenticated}
+              >
+                {renderHome()}
+              </Layout>
+            } />
+            <Route path="/checkout" element={
+              <Layout
+                cartCount={cartCount}
+                currentCustomerName={currentCustomerName}
+                cartAnimating={cartAnimating}
+                isAdminAuthenticated={isAdminAuthenticated}
+              >
+                {renderCheckout()}
+              </Layout>
+            } />
             <Route path="/login" element={renderLogin()} />
+            <Route path="/picker/:token" element={<OrderPicker />} />
             <Route path="/admin" element={isAdminAuthenticated ? renderAdmin() : <Navigate to="/login" />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
@@ -640,6 +762,8 @@ const App: React.FC = () => {
               isOpen={!!quickViewProduct}
               onClose={() => setQuickViewProduct(null)}
               onAddToCart={handleAddToCart}
+              onUpdateQuantity={handleUpdateCartQuantity}
+              quantityInCart={cartItems.find(item => item.id === quickViewProduct.id)?.quantity}
               onNext={handleNextProduct}
               onPrev={handlePrevProduct}
               showPrices={showPrices}

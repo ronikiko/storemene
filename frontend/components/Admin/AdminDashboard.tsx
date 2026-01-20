@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, Category, Customer, PriceList, Order } from '../../types';
-import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, Flame, Coffee, Apple, Milk, Croissant, Sparkles, HelpCircle, DollarSign, Search, ShoppingBag, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, HelpCircle, DollarSign, Search, ShoppingBag, X, ArrowRight, AlertTriangle, Lock, Flame, Coffee, Apple, Milk, Croissant, Sparkles } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
 import PriceListFormModal from './PriceListFormModal';
 import OrderFormModal from './OrderFormModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import UserFormModal from './UserFormModal';
 import OrdersTable from './OrdersTable';
 import { useToast } from '../../context/ToastContext';
+import { productsApi, categoriesApi, customersApi, priceListsApi, settingsApi, ordersApi, usersApi } from '../../services/api';
 
 interface AdminDashboardProps {
   products: Product[];
@@ -63,9 +65,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   showPrices, onUpdateShowPrices,
   onLogout, onGoHome
 }) => {
-  const [ activeTab, setActiveTab ] = useState<'products' | 'categories' | 'customers' | 'pricelists' | 'orders'>('products');
+  const [ activeTab, setActiveTab ] = useState<'products' | 'categories' | 'customers' | 'pricelists' | 'orders' | 'users'>('products');
+  const [ systemUsers, setSystemUsers ] = useState<any[]>([]);
+  const [ isUserModalOpen, setIsUserModalOpen ] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { success, error, info } = useToast();
+  const { success, error: toastError, info } = useToast();
 
   // Pagination States
   const [ currentPage, setCurrentPage ] = useState(1);
@@ -105,12 +109,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setCurrentPage(1);
   }, [ activeTab, itemsPerPage, searchTerm ]);
 
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [ activeTab ]);
+
+  const fetchUsers = async () => {
+    try {
+      const data = await usersApi.getAll();
+      setSystemUsers(data);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      toastError('Failed to fetch users');
+    }
+  };
+
   // Handlers
   const handleSaveProduct = (p: Product) => editingProduct ? onEditProduct(p) : onAddProduct(p);
   const handleSaveCategory = (c: Category) => editingCategory ? onEditCategory(c) : onAddCategory(c);
   const handleSaveCustomer = (c: Customer) => editingCustomer ? onEditCustomer(c) : onAddCustomer(c);
   const handleSavePriceList = (pl: PriceList) => editingPriceList ? onEditPriceList(pl) : onAddPriceList(pl);
   const handleSaveOrder = (o: Order) => editingOrder ? onUpdateOrder(o) : onAddOrder(o);
+
+  const handleSaveUser = async (userData: any) => {
+    try {
+      await usersApi.create(userData);
+      success('משתמש נוסף בהצלחה');
+      fetchUsers();
+      setIsUserModalOpen(false);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'שגיאה ביצירת משתמש');
+      throw err;
+    }
+  };
 
   // Delete Handlers with Confirmation
   const handleDeleteClick = (type: 'product' | 'category' | 'customer' | 'pricelist', id: number | string, name: string) => {
@@ -190,6 +222,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           )
           : orders;
         break;
+      case 'users':
+        data = searchLower
+          ? systemUsers.filter(u =>
+            u.name.toLowerCase().includes(searchLower) ||
+            u.email.toLowerCase().includes(searchLower) ||
+            u.role.toLowerCase().includes(searchLower)
+          )
+          : systemUsers;
+        break;
     }
 
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -208,6 +249,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const paginatedCategories = activeTab === 'categories' ? paginationInfo.data : categories;
   const paginatedCustomers = activeTab === 'customers' ? paginationInfo.data : customers;
   const paginatedPriceLists = activeTab === 'pricelists' ? paginationInfo.data : priceLists;
+  const paginatedUsers = activeTab === 'users' ? paginationInfo.data : systemUsers;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -239,6 +281,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       case 'pricelists':
         data = priceLists;
         filename = 'pricelists.csv';
+        break;
+      case 'users':
+        data = systemUsers.map(({ password, ...rest }) => rest); // Exclude password
+        filename = 'users.csv';
         break;
     }
 
@@ -382,6 +428,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         } else if (activeTab === 'pricelists') {
           const exists = priceLists.find(p => p.id === item.id);
           exists ? onEditPriceList(item) : onAddPriceList(item);
+        } else if (activeTab === 'users') {
+          // For users, we only support adding new ones via CSV for now, or updating if ID exists.
+          // This is a simplified example.
+          const exists = systemUsers.find(u => u.id === item.id);
+          if (exists) {
+            // In a real app, you'd have an onEditUser prop
+            console.warn('User update via CSV not fully implemented. Consider adding onEditUser prop.');
+          } else {
+            handleSaveUser(item); // Assuming item has username, password, role
+          }
         }
       });
       alert('ייבוא הושלם בהצלחה!');
@@ -389,8 +445,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     reader.readAsText(file, 'UTF-8');
   };
 
+  const stats = [
+    { label: 'מוצרים במלאי', value: products.length, icon: Package, color: 'bg-blue-50 text-blue-600' },
+    { label: 'הזמנות ממתינות', value: orders.filter(o => o.status === 'pending').length, icon: ShoppingBag, color: 'bg-orange-50 text-orange-600' },
+    { label: 'לקוחות רשומים', value: customers.length, icon: Users, color: 'bg-purple-50 text-purple-600' },
+    { label: 'מחזור מכירות', value: `₪${orders.reduce((acc, o) => acc + o.totalAmount, 0).toLocaleString()}`, icon: DollarSign, color: 'bg-green-50 text-green-600' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 font-sans pb-20">
+    <div className="min-h-screen bg-pearl font-sans pb-20 selection:bg-coffee-100">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -401,31 +464,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       />
 
       {/* Top Bar */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
+      <div className="glass border-b border-coffee-100/50 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-black">ניהול חנות</h1>
+            <div className="w-10 h-10 bg-coffee-900 rounded-xl flex items-center justify-center shadow-lg">
+              <Lock className="w-5 h-5 text-champagne-400" />
+            </div>
+            <h1 className="text-xl font-black text-coffee-950 uppercase tracking-tighter">ניהול מערכת</h1>
           </div>
           <div className="flex items-center gap-3">
             {/* Show Prices Toggle */}
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-              <span className="text-sm font-medium text-gray-700 hidden md:inline">הצג מחירים:</span>
+            <div className="flex items-center gap-3 bg-white/50 px-4 py-2 rounded-2xl border border-coffee-100/50 shadow-sm">
+              <span className="text-[10px] font-black text-coffee-400 uppercase tracking-widest hidden md:inline">הצגת מחירים</span>
               <button
                 onClick={() => onUpdateShowPrices(!showPrices)}
-                className={`relative w-11 h-6 rounded-full transition-colors ${showPrices ? 'bg-green-500' : 'bg-gray-300'}`}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${showPrices ? 'bg-coffee-900' : 'bg-coffee-200'}`}
               >
-                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${showPrices ? 'right-1' : 'right-6'}`} />
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 ${showPrices ? 'right-7' : 'right-1'}`} />
               </button>
             </div>
-            <button onClick={onGoHome} className="text-sm font-medium text-gray-600 hover:text-black hidden md:block">
-              חזרה לאתר
+            <button onClick={onGoHome} className="text-xs font-black text-coffee-500 hover:text-coffee-900 transition-colors hidden md:block uppercase tracking-wider">
+              חזרה לחנות
             </button>
             <button
               onClick={onLogout}
-              className="flex items-center gap-2 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors text-sm font-bold"
+              className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2.5 rounded-2xl transition-all text-xs font-black"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden md:inline">התנתק</span>
+              <span className="hidden md:inline">התנתקות</span>
             </button>
           </div>
         </div>
@@ -433,103 +499,101 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       <div className="container mx-auto px-4 py-8">
 
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          {stats.map((stat, idx) => (
+            <div key={idx} className="glass p-6 rounded-[2rem] premium-shadow border border-white/50 flex flex-col gap-4 group hover:scale-[1.02] transition-transform duration-300">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color} shadow-sm group-hover:rotate-12 transition-transform`}>
+                <stat.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="text-[10px] font-black text-coffee-400 uppercase tracking-widest mb-1">{stat.label}</div>
+                <div className="text-2xl font-black text-coffee-950">{stat.value}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Tabs & Actions */}
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6">
 
           {/* Tabs */}
-          <div className="flex flex-wrap gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex flex-wrap gap-2 p-1.5 bg-coffee-100/30 rounded-3xl border border-coffee-100/50 w-full xl:w-auto overflow-x-auto no-scrollbar">
             {[
               { id: 'products', label: 'מוצרים', icon: Package },
               { id: 'categories', label: 'קטגוריות', icon: Grid },
               { id: 'customers', label: 'לקוחות', icon: Users },
               { id: 'pricelists', label: 'מחירונים', icon: Tag },
+              { id: 'orders', label: 'הזמנות', icon: ShoppingBag },
+              { id: 'users', label: 'מנהלים', icon: Lock },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`
-                  flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all relative
-                  ${activeTab === tab.id ? 'text-coffee-900' : 'text-gray-400 hover:text-gray-600'}
+                  flex items-center gap-3 px-6 py-3.5 font-black text-xs transition-all rounded-2xl whitespace-nowrap
+                  ${activeTab === tab.id
+                    ? 'bg-coffee-900 text-white shadow-xl shadow-coffee-200 translate-y-[-1px]'
+                    : 'text-coffee-400 hover:text-coffee-600 hover:bg-white/50'}
                 `}
               >
-                <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-coffee-600' : ''}`} />
+                <tab.icon className="w-4 h-4" />
                 {tab.label}
-                {activeTab === tab.id && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-coffee-900 rounded-t-full" />
-                )}
               </button>
             ))}
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`
-                  flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all relative
-                  ${activeTab === 'orders' ? 'text-coffee-900' : 'text-gray-400 hover:text-gray-600'}
-                `}
-            >
-              <ShoppingBag className={`w-5 h-5 ${activeTab === 'orders' ? 'text-coffee-600' : ''}`} />
-              הזמנות
-              {activeTab === 'orders' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-coffee-900 rounded-t-full" />
-              )}
-            </button>
           </div>
 
-          {/* Search Field */}
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              placeholder="חיפוש..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-gray-300 rounded-lg px-10 py-2.5 text-sm focus:ring-2 focus:ring-black outline-none"
-            />
-            <Search className="absolute right-3 top-3 w-4 h-4 text-gray-400" />
-            {searchTerm && (
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+            {/* Search Field */}
+            <div className="relative w-full md:max-w-md">
+              <input
+                type="text"
+                placeholder="חיפוש חופשי..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white/50 border border-coffee-100 rounded-2xl px-12 py-3.5 text-sm focus:ring-4 focus:ring-coffee-100 outline-none font-medium placeholder:text-coffee-300 shadow-inner"
+              />
+              <Search className="absolute right-4 top-3.5 w-5 h-5 text-coffee-300" />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
               <button
-                onClick={() => setSearchTerm('')}
-                className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600"
+                onClick={handleImportClick}
+                className="bg-white text-coffee-600 border border-coffee-100 px-5 py-3.5 rounded-2xl font-black shadow-sm hover:bg-coffee-50 transition-all flex items-center gap-2 text-xs"
+                title="ייבוא מקובץ CSV"
               >
-                ✕
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">ייבוא</span>
               </button>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap self-end xl:self-auto">
-            <button
-              onClick={handleImportClick}
-              className="bg-white text-gray-700 border border-gray-300 px-4 py-3 rounded-full font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
-              title="ייבוא מקובץ CSV"
-            >
-              <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">ייבוא</span>
-            </button>
-            <button
-              onClick={handleExport}
-              className="bg-white text-gray-700 border border-gray-300 px-4 py-3 rounded-full font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
-              title="ייצוא לקובץ CSV"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">ייצוא</span>
-            </button>
-            <button
-              onClick={() => {
-                if (activeTab === 'products') { setEditingProduct(null); setIsProductModalOpen(true); }
-                if (activeTab === 'categories') { setEditingCategory(null); setIsCategoryModalOpen(true); }
-                if (activeTab === 'customers') { setEditingCustomer(null); setIsCustomerModalOpen(true); }
-                if (activeTab === 'pricelists') { setEditingPriceList(null); setIsPriceListModalOpen(true); }
-                if (activeTab === 'orders') { setEditingOrder(null); setIsOrderModalOpen(true); }
-              }}
-              className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              הוסף חדש
-            </button>
+              <button
+                onClick={handleExport}
+                className="bg-white text-coffee-600 border border-coffee-100 px-5 py-3.5 rounded-2xl font-black shadow-sm hover:bg-coffee-50 transition-all flex items-center gap-2 text-xs"
+                title="ייצוא לקובץ CSV"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">ייצוא</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (activeTab === 'products') { setEditingProduct(null); setIsProductModalOpen(true); }
+                  if (activeTab === 'categories') { setEditingCategory(null); setIsCategoryModalOpen(true); }
+                  if (activeTab === 'customers') { setEditingCustomer(null); setIsCustomerModalOpen(true); }
+                  if (activeTab === 'pricelists') { setEditingPriceList(null); setIsPriceListModalOpen(true); }
+                  if (activeTab === 'orders') { setEditingOrder(null); setIsOrderModalOpen(true); }
+                  if (activeTab === 'users') { setIsUserModalOpen(true); }
+                }}
+                className="bg-coffee-950 text-champagne-50 px-8 py-3.5 rounded-2xl font-black shadow-2xl hover:bg-black transition-all flex items-center gap-2 text-xs active:scale-95 translate-y-[-1px]"
+              >
+                <Plus className="w-5 h-5" />
+                חדש
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+        <div className="glass rounded-[2rem] premium-shadow overflow-hidden border border-white/50">
           <div className="overflow-x-auto">
             {activeTab === 'products' && (
               <table className="w-full text-right">
@@ -679,6 +743,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </tbody>
               </table>
             )}
+
+            {activeTab === 'users' && (
+              <table className="w-full text-right">
+                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                  <tr>
+                    <th className="px-6 py-4">שם</th>
+                    <th className="px-6 py-4">אימייל</th>
+                    <th className="px-6 py-4">תפקיד</th>
+                    <th className="px-6 py-4">פעולות</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-bold">{user.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
+                      <td className="px-6 py-4 text-sm">{user.role}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {activeTab === 'orders' && (
@@ -689,95 +779,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Pagination Controls */}
           {paginationInfo.total > 0 && (
-            <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="px-8 py-6 bg-white/50 border-t border-coffee-100/50 flex flex-col sm:flex-row items-center justify-between gap-6">
               {/* Items per page selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">הצג:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                  className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-black outline-none"
-                >
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-                <span className="text-sm text-gray-600">
-                  מציג {paginationInfo.startIndex}-{paginationInfo.endIndex} מתוך {paginationInfo.total}
-                </span>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] font-black text-coffee-400 uppercase tracking-widest">הצג פריטים:</span>
+                <div className="flex bg-pearl p-1 rounded-xl border border-coffee-100 shadow-inner">
+                  {[ 20, 50, 100 ].map(val => (
+                    <button
+                      key={val}
+                      onClick={() => handleItemsPerPageChange(val)}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${itemsPerPage === val ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:text-coffee-600 hover:bg-white'}`}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Page navigation */}
-              {paginationInfo.totalPages > 1 && (
-                <div className="flex items-center gap-2">
-                  {/* Previous button */}
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    הקודם
-                  </button>
+              {/* Status Info */}
+              <div className="text-xs font-bold text-coffee-500 bg-coffee-50 px-4 py-2.5 rounded-full border border-coffee-100/50">
+                מציג <span className="text-coffee-950">{paginationInfo.startIndex}-{paginationInfo.endIndex}</span> מתוך <span className="text-coffee-950">{paginationInfo.total}</span>
+              </div>
 
-                  {/* Page numbers */}
-                  <div className="flex items-center gap-1">
-                    {/* First page */}
-                    {currentPage > 2 && (
-                      <>
+              {/* Page Selector */}
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-coffee-100 text-coffee-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-coffee-50 shadow-sm"
+                >
+                  <ArrowRight className="w-4 h-4 rotate-180" />
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: paginationInfo.totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === paginationInfo.totalPages || (p >= currentPage - 1 && p <= currentPage + 1))
+                    .map((p, idx, arr) => (
+                      <React.Fragment key={p}>
+                        {idx > 0 && arr[ idx - 1 ] !== p - 1 && <span className="text-coffee-300 mx-1">...</span>}
                         <button
-                          onClick={() => handlePageChange(1)}
-                          className="w-10 h-10 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 transition-colors"
+                          onClick={() => handlePageChange(p)}
+                          className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${currentPage === p ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:bg-white border border-transparent hover:border-coffee-100'}`}
                         >
-                          1
+                          {p}
                         </button>
-                        {currentPage > 3 && <span className="text-gray-400">...</span>}
-                      </>
-                    )}
-
-                    {/* Current page and neighbors */}
-                    {Array.from({ length: paginationInfo.totalPages }, (_, i) => i + 1)
-                      .filter(page => {
-                        return page === currentPage ||
-                          page === currentPage - 1 ||
-                          page === currentPage + 1;
-                      })
-                      .map(page => (
-                        <button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${page === currentPage
-                            ? 'bg-black text-white border-black'
-                            : 'border-gray-300 hover:bg-gray-50'
-                            }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-
-                    {/* Last page */}
-                    {currentPage < paginationInfo.totalPages - 1 && (
-                      <>
-                        {currentPage < paginationInfo.totalPages - 2 && <span className="text-gray-400">...</span>}
-                        <button
-                          onClick={() => handlePageChange(paginationInfo.totalPages)}
-                          className="w-10 h-10 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 transition-colors"
-                        >
-                          {paginationInfo.totalPages}
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Next button */}
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === paginationInfo.totalPages}
-                    className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    הבא
-                  </button>
+                      </React.Fragment>
+                    ))
+                  }
                 </div>
-              )}
+
+                <button
+                  disabled={currentPage === paginationInfo.totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-coffee-100 text-coffee-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-coffee-50 shadow-sm"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -819,50 +877,96 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         priceLists={priceLists}
         orderToEdit={editingOrder}
       />
-
-      <DeleteConfirmModal
-        isOpen={deleteConfirm.isOpen}
-        title={`מחיקת ${deleteConfirm.type === 'product' ? 'מוצר' : deleteConfirm.type === 'category' ? 'קטגוריה' : deleteConfirm.type === 'customer' ? 'לקוח' : 'מחירון'}`}
-        message="פעולה זו אינה ניתנת לביטול. האם אתה בטוח?"
-        itemName={deleteConfirm.name}
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
+      <UserFormModal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        onSave={handleSaveUser}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-coffee-950/40 backdrop-blur-md" onClick={handleCancelDelete} />
+          <div className="relative bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-[2rem] flex items-center justify-center mb-6">
+                <AlertTriangle className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-black text-coffee-950 mb-3">מחיקת {deleteConfirm.type === 'product' ? 'מוצר' : deleteConfirm.type === 'category' ? 'קטגוריה' : deleteConfirm.type === 'customer' ? 'לקוח' : 'מחירון'}</h3>
+              <p className="text-coffee-500 font-medium mb-8 leading-relaxed">האם את בטוחה שברצונך למחוק את <span className="text-coffee-950 font-bold">{deleteConfirm.name}</span>? פעולה זו אינה ניתנת לביטול.</p>
+
+              <div className="flex gap-4 w-full">
+                <button
+                  onClick={handleCancelDelete}
+                  className="flex-1 py-4 rounded-xl font-bold text-coffee-400 hover:bg-coffee-50 transition-colors"
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-4 rounded-xl bg-red-600 text-white font-black hover:bg-red-700 shadow-xl shadow-red-100 active:scale-95 transition-all"
+                >
+                  כן, למחוק
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Price List Customers Modal */}
       {viewingPriceListCustomers && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setViewingPriceListCustomers(null)} />
-          <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold">לקוחות המשויכים למחירון: {viewingPriceListCustomers.name}</h3>
-              <button onClick={() => setViewingPriceListCustomers(null)} className="p-2 hover:bg-gray-100 rounded-full">
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-coffee-950/40 backdrop-blur-md" onClick={() => setViewingPriceListCustomers(null)} />
+          <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-coffee-100/50 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-black text-coffee-950 leading-tight">לקוחות משויכים</h3>
+                <p className="text-sm font-bold text-coffee-400 uppercase tracking-widest">{viewingPriceListCustomers.name}</p>
+              </div>
+              <button
+                onClick={() => setViewingPriceListCustomers(null)}
+                className="w-12 h-12 bg-coffee-50 text-coffee-400 rounded-2xl flex items-center justify-center hover:bg-coffee-100 transition-colors"
+              >
+                <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-4 max-h-[60vh] overflow-y-auto">
+
+            <div className="p-8 max-h-[60vh] overflow-y-auto no-scrollbar">
               {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).map(customer => (
-                    <div key={customer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                      <div>
-                        <div className="font-bold text-gray-900">{customer.name}</div>
-                        <div className="text-xs text-gray-500">{customer.email}</div>
+                    <div key={customer.id} className="flex items-center justify-between p-5 bg-pearl rounded-2xl border border-coffee-100/50 group hover:border-coffee-300 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-coffee-900 font-black">
+                          {customer.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-black text-coffee-950">{customer.name}</div>
+                          <div className="text-xs font-bold text-coffee-400">{customer.email}</div>
+                        </div>
                       </div>
-                      <div className="text-sm font-medium text-gray-700">{customer.phone}</div>
+                      <div className="text-sm font-black text-coffee-900 bg-white px-3 py-1.5 rounded-lg shadow-sm">
+                        {customer.phone}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p>אין לקוחות משויכים למחירון זה</p>
+                <div className="text-center py-10">
+                  <div className="w-20 h-20 bg-coffee-50 text-coffee-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Users className="w-10 h-10" />
+                  </div>
+                  <p className="text-lg font-black text-coffee-950 mb-1">אין לקוחות משויכים</p>
+                  <p className="text-sm font-bold text-coffee-400 uppercase tracking-wider">שייכי לקוחות למחירון זה כדי לראות אותם כאן</p>
                 </div>
               )}
             </div>
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
+
+            <div className="p-8 border-t border-coffee-100/50 bg-coffee-50/50">
               <button
                 onClick={() => setViewingPriceListCustomers(null)}
-                className="w-full bg-black text-white font-bold py-2.5 rounded-xl hover:bg-gray-800 transition-colors"
+                className="w-full bg-coffee-900 text-white font-black py-4 rounded-2xl shadow-xl shadow-coffee-100 hover:scale-[1.02] active:scale-95 transition-all"
               >
                 סגור
               </button>

@@ -4,6 +4,10 @@ import { orders, orderItems } from '../db/schema.js'
 import { eq, desc } from 'drizzle-orm'
 // import rivhitApi from '@api/rivhit-api'
 import { rivchitService } from '../services/RivchitService.js'
+import crypto from 'crypto'
+
+const MANAGER_PHONE = process.env.MANAGER_PHONE || '972543087670'
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
 
 const router = express.Router()
 
@@ -23,7 +27,7 @@ router.get('/', async (req, res) => {
 					.from(orderItems)
 					.where(eq(orderItems.orderId, order.id))
 				return { ...order, items }
-			})
+			}),
 		)
 
 		res.json(ordersWithItems)
@@ -75,8 +79,8 @@ router.post('/', async (req, res) => {
 						discountPercent: item.discountPercent || 0,
 						total: item.total,
 						imageUrl: item.imageUrl,
-					})
-				)
+					}),
+				),
 			)
 			const orderData = { customerName, items, totalAmount, discountPercent }
 			const rivhitRes = await rivchitService.createNewOrder(orderData)
@@ -106,7 +110,101 @@ router.post('/', async (req, res) => {
 	}
 })
 
-// PUT update order
+// GET order by picking token
+router.get('/picking/:token', async (req, res) => {
+	try {
+		const [order] = await db
+			.select()
+			.from(orders)
+			.where(eq(orders.pickingToken, req.params.token))
+
+		if (!order) {
+			return res.status(404).json({ error: 'Order not found' })
+		}
+
+		const items = await db
+			.select()
+			.from(orderItems)
+			.where(eq(orderItems.orderId, order.id))
+
+		res.json({ ...order, items })
+	} catch (error) {
+		res.status(500).json({ error: error.message })
+	}
+})
+
+// POST complete picking
+router.post('/picking/:token/complete', async (req, res) => {
+	try {
+		const { itemsStatus } = req.body // Array of { id: itemId, status: 'collected' | 'out_of_stock' }
+		const token = req.params.token
+
+		const [order] = await db
+			.select()
+			.from(orders)
+			.where(eq(orders.pickingToken, token))
+
+		if (!order) {
+			return res.status(404).json({ error: 'Order not found' })
+		}
+
+		// Update items status and quantities
+		await Promise.all(
+			itemsStatus.map(async (item) => {
+				const [currentItem] = await db
+					.select()
+					.from(orderItems)
+					.where(eq(orderItems.id, item.id))
+
+				if (currentItem) {
+					// Recalculate item total based on picked quantity
+					const pickedQty = item.pickedQuantity ?? currentItem.quantity
+					const itemTotal =
+						pickedQty *
+						currentItem.price *
+						(1 - (currentItem.discountPercent || 0) / 100)
+
+					await db
+						.update(orderItems)
+						.set({
+							pickingStatus: item.status,
+							pickedQuantity: pickedQty,
+							quantity: pickedQty, // Sync original quantity to picked quantity
+							total: itemTotal, // Sync item total
+						})
+						.where(eq(orderItems.id, item.id))
+				}
+			}),
+		)
+
+		// Recalculate order total from all items
+		const allItems = await db
+			.select()
+			.from(orderItems)
+			.where(eq(orderItems.orderId, order.id))
+
+		const newTotalSum = allItems.reduce(
+			(sum, item) => sum + (item.total || 0),
+			0,
+		)
+
+		// Update order status and total amount
+		const [updatedOrder] = await db
+			.update(orders)
+			.set({
+				status: 'ready_for_shipping',
+				totalAmount: newTotalSum,
+			})
+			.where(eq(orders.id, order.id))
+			.returning()
+
+		res.json(updatedOrder)
+	} catch (error) {
+		res.status(500).json({ error: error.message })
+	}
+})
+
+// PUT update order (with WhatsApp trigger)
 router.put('/:id', async (req, res) => {
 	try {
 		const {
@@ -121,6 +219,20 @@ router.put('/:id', async (req, res) => {
 		} = req.body
 		const orderId = req.params.id
 
+		// Fetch current order to check status change
+		const [currentOrder] = await db
+			.select()
+			.from(orders)
+			.where(eq(orders.id, orderId))
+		if (!currentOrder) {
+			return res.status(404).json({ error: 'Order not found' })
+		}
+
+		let pickingToken = currentOrder.pickingToken
+		if (status === 'processing' && !pickingToken) {
+			pickingToken = crypto.randomBytes(16).toString('hex')
+		}
+
 		// Update order details
 		const [updatedOrder] = await db
 			.update(orders)
@@ -132,12 +244,28 @@ router.put('/:id', async (req, res) => {
 				totalAmount,
 				discountPercent: discountPercent || 0,
 				status,
+				pickingToken,
 			})
 			.where(eq(orders.id, orderId))
 			.returning()
 
-		if (!updatedOrder) {
-			return res.status(404).json({ error: 'Order not found' })
+		// Trigger WhatsApp if status changed to 'processing'
+		if (status === 'processing' && currentOrder.status !== 'processing') {
+			const pickingUrl = `${FRONTEND_URL}/picker/${pickingToken}`
+			const message = `🔔 הזמנה חדשה בטיפול: ${orderId}\nלקוח: ${customerName}\nלינק לליקוט: ${pickingUrl}`
+			const encodedMessage = encodeURIComponent(message)
+			const waLink = `https://wa.me/${MANAGER_PHONE}?text=${encodedMessage}`
+
+			// Since we can't "send" WhatsApp message directly from node without a provider,
+			// we return the link to the frontend for the admin to click, or we log it.
+			// Actually, the user said "שהמערכת אוטומטית תשלח".
+			// In a real scenario we'd use an API. For now I'll include the link in the response
+			// so the frontend can potentially open it or show a button.
+			// But the requirement says "automatically send".
+			console.log('--- WhatsApp Notification Required ---')
+			console.log(`URL: ${waLink}`)
+			console.log('--------------------------------------')
+			updatedOrder.whatsAppLink = waLink
 		}
 
 		// Update items: Delete old ones and insert new ones
@@ -156,8 +284,10 @@ router.put('/:id', async (req, res) => {
 							discountPercent: item.discountPercent || 0,
 							total: item.total,
 							imageUrl: item.imageUrl,
-						})
-					)
+							pickingStatus: item.pickingStatus || 'pending',
+							pickedQuantity: item.pickedQuantity,
+						}),
+					),
 				)
 			}
 		}
@@ -171,6 +301,36 @@ router.put('/:id', async (req, res) => {
 		res.json({ ...updatedOrder, items: savedItems })
 	} catch (error) {
 		console.error('Error updating order:', error)
+		res.status(500).json({ error: error.message })
+	}
+})
+
+// GET picking link for an order
+router.get('/:id/picking-link', async (req, res) => {
+	try {
+		const orderId = req.params.id
+		const [order] = await db.select().from(orders).where(eq(orders.id, orderId))
+
+		if (!order) {
+			return res.status(404).json({ error: 'Order not found' })
+		}
+
+		let pickingToken = order.pickingToken
+		if (!pickingToken) {
+			pickingToken = crypto.randomBytes(16).toString('hex')
+			await db
+				.update(orders)
+				.set({ pickingToken })
+				.where(eq(orders.id, orderId))
+		}
+
+		const pickingUrl = `${FRONTEND_URL}/picker/${pickingToken}`
+		const message = `🔔 תזכורת ליקוט הזמנה: ${orderId}\nלקוח: ${order.customerName}\nלינק לליקוט: ${pickingUrl}`
+		const encodedMessage = encodeURIComponent(message)
+		const waLink = `https://wa.me/${MANAGER_PHONE}?text=${encodedMessage}`
+
+		res.json({ whatsAppLink: waLink, pickingToken })
+	} catch (error) {
 		res.status(500).json({ error: error.message })
 	}
 })

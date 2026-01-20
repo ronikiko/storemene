@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { authApi } from '../../services/api';
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -13,13 +14,13 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
   const [ password, setPassword ] = useState('');
   const { error: toastError } = useToast(); // Renamed to avoid conflict with removed local 'error' state
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple hardcoded validation for demo purposes
-    if (password === 'admin123') { // Changed password and removed email check
-      onLogin();
-    } else {
-      toastError('סיסמה שגויה'); // Using toast for error display
+    try {
+      await authApi.loginAdmin({ email, password });
+      onLogin(); // App.tsx will handle the state update if needed, but onLogin is good
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'סיסמה או אימייל שגויים');
     }
   };
 

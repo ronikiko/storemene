@@ -16,10 +16,13 @@
 	"license": "ISC",
 	"dependencies": {
 		"@api/rivhit-api": "file:./.api/apis/rivhit-api",
+		"bcryptjs": "^3.0.3",
+		"cookie-parser": "^1.4.7",
 		"cors": "^2.8.5",
 		"dotenv": "^16.4.5",
 		"drizzle-orm": "^0.29.3",
 		"express": "^4.18.2",
+		"jsonwebtoken": "^9.0.3",
 		"pg": "^8.16.3",
 		"postgres": "^3.4.3"
 	},

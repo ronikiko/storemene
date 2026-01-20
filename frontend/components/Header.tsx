@@ -12,58 +12,51 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onUserClick, cartAnimating = false, customerName }) => {
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm border-b border-coffee-100">
-      {/* Top Banner */}
-
-      {/* Main Navbar */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-6">
-          {/* Left: Logo & Menu */}
-          <div className="flex items-center gap-4">
-            <button className="md:hidden p-1 text-coffee-800">
-              <Menu className="w-6 h-6" />
-            </button>
+    <header className="sticky top-0 z-50 glass border-b border-coffee-100/50">
+      <div className="container mx-auto px-4 py-3 md:py-4">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-coffee-900 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform cursor-pointer" onClick={onLogoClick}>
+              <ShoppingBag className="w-6 h-6 text-champagne-100" />
+            </div>
             <h1
               onClick={onLogoClick}
-              className="text-2xl md:text-3xl font-black tracking-tight text-coffee-900 cursor-pointer hover:opacity-90 transition-opacity"
+              className="text-xl md:text-2xl font-black tracking-tight text-coffee-900 cursor-pointer hover:opacity-80 transition-opacity leading-tight"
             >
-              קטלוג מוצרים - קיקו שיווק
+              קיקו שיווק
             </h1>
           </div>
 
-          {/* Middle: Customer Badge */}
+          {/* Middle: Customer Badge (Desktop Only) */}
           {customerName && (
-            <div className="hidden lg:flex items-center gap-3 px-4 py-2 bg-slate-800 text-white rounded-full shadow-lg animate-in slide-in-from-top-2 duration-300">
-              <Users className="w-5 h-5 text-green-400" />
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <span className="text-slate-400">צפה כלקוח:</span>
-                <span className="text-green-400 font-bold">{customerName}</span>
+            <div className="hidden lg:flex items-center gap-3 px-5 py-2.5 bg-coffee-950 text-white rounded-2xl shadow-xl animate-in fade-in slide-in-from-top-4 duration-500 border border-white/10">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="flex flex-col">
+                <span className="text-[10px] text-coffee-400 font-bold uppercase tracking-wider">מחובר כעת</span>
+                <span className="text-sm font-bold text-champagne-50">{customerName}</span>
               </div>
             </div>
           )}
 
-          {/* Right: Icons */}
-          <div className="flex items-center gap-3 sm:gap-5">
-            <button className="text-coffee-700 hover:text-coffee-900 md:hidden p-2 hover:bg-coffee-50 rounded-full transition-colors">
-              <Search className="w-6 h-6" />
-            </button>
-            <button className="text-coffee-700 hover:text-coffee-900 p-2 hover:bg-coffee-50 rounded-full transition-colors relative hidden sm:block">
-              <Heart className="w-6 h-6" />
-            </button>
+          {/* Right: Icons (Desktop only or specific actions) */}
+          <div className="flex items-center gap-2">
             <button
-              className="text-coffee-700 hover:text-coffee-900 p-2 hover:bg-coffee-50 rounded-full transition-colors"
+              className="text-coffee-600 hover:text-coffee-900 p-2.5 hover:bg-coffee-50 rounded-2xl transition-all hidden md:flex"
               onClick={onUserClick}
-              aria-label="Login / Account"
             >
               <User className="w-6 h-6" />
             </button>
             <button
-              className={`text-coffee-700 hover:text-coffee-900 p-2 hover:bg-coffee-50 rounded-full transition-colors relative ${cartAnimating ? 'animate-bounce' : ''}`}
+              className={`relative p-2.5 rounded-2xl transition-all ${cartCount > 0
+                  ? 'bg-coffee-900 text-white shadow-lg shadow-coffee-200'
+                  : 'text-coffee-600 hover:bg-coffee-50'
+                } ${cartAnimating ? 'scale-110' : ''}`}
               onClick={onCartClick}
             >
               <ShoppingBag className="w-6 h-6" />
               {cartCount > 0 && (
-                <span className="absolute top-0 right-0 bg-coffee-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in border-2 border-white">
+                <span className="absolute -top-1 -right-1 bg-white text-coffee-950 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-coffee-900 shadow-sm animate-in zoom-in">
                   {cartCount}
                 </span>
               )}

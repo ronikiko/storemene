@@ -20,30 +20,33 @@ const iconMap: Record<string, React.ElementType> = {
 
 const CategoryNav: React.FC<CategoryNavProps> = ({ categories, selectedCategory, onSelectCategory }) => {
     return (
-        <div className="w-full overflow-x-auto pb-4 pt-2 no-scrollbar">
-            <div className="flex gap-4 px-4 min-w-max">
+        <div className="w-full overflow-x-auto pb-6 pt-4 no-scrollbar">
+            <div className="flex gap-3 px-4 min-w-max">
                 <button
                     onClick={() => onSelectCategory(null)}
-                    className={`flex flex-col items-center gap-2 min-w-[40px] group transition-all ${selectedCategory === null ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-300 border ${selectedCategory === null
+                            ? 'bg-coffee-900 text-white border-coffee-900 shadow-xl shadow-coffee-200 scale-105'
+                            : 'bg-white text-coffee-600 border-coffee-100 hover:border-coffee-300'
+                        }`}
                 >
-                    <div className={`w-12 h-12 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center overflow-hidden shadow-sm transition-all ${selectedCategory === null ? 'border-coffee-900 bg-coffee-900 text-white ring-2 ring-coffee-900/20' : 'border-transparent bg-white text-coffee-900 group-hover:border-coffee-200'}`}>
-                        <span className="font-bold text-lg">הכל</span>
-                    </div>
-                    <span className={`text-sm font-bold ${selectedCategory === null ? 'text-coffee-900' : 'text-coffee-600'}`}>כל המוצרים</span>
+                    <Package className={`w-5 h-5 ${selectedCategory === null ? 'text-champagne-400' : ''}`} />
+                    <span className="font-black text-sm whitespace-nowrap">הכל</span>
                 </button>
 
                 {categories.map((category) => {
                     const IconComponent = iconMap[ category.icon ] || HelpCircle;
+                    const isActive = selectedCategory === category.id;
                     return (
                         <button
                             key={category.id}
                             onClick={() => onSelectCategory(category.id)}
-                            className={`flex flex-col items-center gap-2 min-w-[80px] group transition-all ${selectedCategory === category.id ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                            className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-300 border ${isActive
+                                    ? 'bg-coffee-900 text-white border-coffee-900 shadow-xl shadow-coffee-200 scale-105'
+                                    : 'bg-white text-coffee-600 border-coffee-100 hover:border-coffee-300'
+                                }`}
                         >
-                            <div className={`w-12 h-12 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center overflow-hidden shadow-sm transition-all ${selectedCategory === category.id ? 'border-coffee-900 bg-coffee-900 text-white ring-2 ring-coffee-900/20' : 'border-transparent bg-white text-coffee-900 group-hover:border-coffee-200'}`}>
-                                <IconComponent className="w-6 h-6" />
-                            </div>
-                            <span className={`text-sm font-bold ${selectedCategory === category.id ? 'text-coffee-900' : 'text-coffee-600'}`}>{category.name}</span>
+                            <IconComponent className={`w-5 h-5 ${isActive ? 'text-champagne-400' : ''}`} />
+                            <span className="font-black text-sm whitespace-nowrap">{category.name}</span>
                         </button>
                     );
                 })}

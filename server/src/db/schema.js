@@ -62,7 +62,7 @@ export const settings = pgTable('settings', {
 
 // Orders table
 export const orders = pgTable('orders', {
-	id: text('id').primaryKey(), // Using ORD-XXXX format as in frontend
+	id: text('id').primaryKey(),
 	customerId: text('customer_id'),
 	customerName: text('customer_name').notNull(),
 	customerPhone: text('customer_phone'),
@@ -71,6 +71,7 @@ export const orders = pgTable('orders', {
 	discountPercent: real('discount_percent').notNull().default(0),
 	status: text('status').notNull().default('pending'),
 	documentLink: text('document_link'),
+	pickingToken: text('picking_token'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -85,4 +86,16 @@ export const orderItems = pgTable('order_items', {
 	discountPercent: real('discount_percent').notNull().default(0),
 	total: real('total').notNull(),
 	imageUrl: text('image_url').notNull(),
+	pickingStatus: text('picking_status').notNull().default('pending'), // 'pending', 'collected', 'out_of_stock'
+	pickedQuantity: integer('picked_quantity'),
+})
+
+// Users table (Admin accounts)
+export const users = pgTable('users', {
+	id: serial('id').primaryKey(),
+	name: text('name').notNull(),
+	email: text('email').notNull().unique(),
+	passwordHash: text('password_hash').notNull(),
+	role: text('role').notNull().default('admin'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
 })

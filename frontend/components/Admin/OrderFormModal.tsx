@@ -219,6 +219,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({ isOpen, onClose, onSave
                                 >
                                     <option value="pending">התקבל (Pending)</option>
                                     <option value="processing">בטיפול (Processing)</option>
+                                    <option value="ready_for_shipping">מוכן למשלוח (Ready for Shipping)</option>
                                     <option value="shipped">נשלח (Shipped)</option>
                                     <option value="delivered">נמסר (Delivered)</option>
                                     <option value="cancelled">בוטל (Cancelled)</option>

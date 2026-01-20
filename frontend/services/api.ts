@@ -1,5 +1,5 @@
-const API_BASE_URL = 'https://storemene.vercel.app/api';
-// const API_BASE_URL = 'http://localhost:3001/api';
+// const API_BASE_URL = 'https://storemene.vercel.app/api';
+const API_BASE_URL = 'http://localhost:3001/api';
 
 // Helper function for API calls
 async function apiCall(endpoint: string, options: RequestInit = {}) {
@@ -8,6 +8,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
             'Content-Type': 'application/json',
             ...options.headers,
         },
+        credentials: 'include', // Needed for HTTP-only cookies
         ...options,
     });
 
@@ -93,9 +94,22 @@ export const authApi = {
         method: 'POST',
         body: JSON.stringify({ token }),
     }),
-    authenticateAdmin: (password: string) => apiCall('/auth/admin', {
+    loginAdmin: (credentials: { email: string; password: string }) => apiCall('/auth/admin/login', {
         method: 'POST',
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(credentials),
+    }),
+    logoutAdmin: () => apiCall('/auth/admin/logout', {
+        method: 'POST',
+    }),
+    getMe: () => apiCall('/auth/admin/me'),
+};
+
+// Users API
+export const usersApi = {
+    getAll: () => apiCall('/users'),
+    create: (user: any) => apiCall('/users', {
+        method: 'POST',
+        body: JSON.stringify(user),
     }),
 };
 
@@ -120,4 +134,10 @@ export const ordersApi = {
         method: 'PUT',
         body: JSON.stringify(order),
     }),
+    getByToken: (token: string) => apiCall(`/orders/picking/${token}`),
+    completePicking: (token: string, itemsStatus: any[]) => apiCall(`/orders/picking/${token}/complete`, {
+        method: 'POST',
+        body: JSON.stringify({ itemsStatus }),
+    }),
+    getPickingLink: (id: string) => apiCall(`/orders/${id}/picking-link`),
 };

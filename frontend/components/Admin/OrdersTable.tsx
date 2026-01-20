@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../../types';
-import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText, Pencil } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText, Pencil, Share } from 'lucide-react';
+import { ordersApi } from '../../services/api';
 
 interface OrdersTableProps {
     orders: Order[];
@@ -11,14 +12,16 @@ interface OrdersTableProps {
 const statusColors: Record<OrderStatus, string> = {
     'pending': 'bg-yellow-100 text-yellow-800',
     'processing': 'bg-blue-100 text-blue-800',
+    'ready_for_shipping': 'bg-green-100 text-green-800',
     'shipped': 'bg-purple-100 text-purple-800',
-    'delivered': 'bg-green-100 text-green-800',
+    'delivered': 'bg-teal-100 text-teal-800',
     'cancelled': 'bg-red-100 text-red-800',
 };
 
 const statusLabels: Record<OrderStatus, string> = {
     'pending': 'התקבל',
     'processing': 'בטיפול',
+    'ready_for_shipping': 'מוכן למשלוח',
     'shipped': 'נשלח',
     'delivered': 'נמסר',
     'cancelled': 'בוטל',
@@ -33,6 +36,18 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdi
 
     const handleStatusChange = (order: Order, newStatus: OrderStatus) => {
         onUpdateStatus({ ...order, status: newStatus });
+    };
+
+    const handleResendPicking = async (order: Order) => {
+        try {
+            const result = await ordersApi.getPickingLink(order.id);
+            if (result.whatsAppLink) {
+                window.open(result.whatsAppLink, '_blank');
+            }
+        } catch (err) {
+            console.error('Failed to get picking link:', err);
+            alert('שגיאה ביצירת קישור ליקוט');
+        }
     };
 
     return (
@@ -89,6 +104,13 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdi
                                                     <FileText className="w-5 h-5" />
                                                 </a>
                                             )}
+                                            <button
+                                                onClick={() => handleResendPicking(order)}
+                                                className="p-2 hover:bg-green-50 rounded-full text-green-600 transition-colors"
+                                                title="שלח שוב לליקוט (WhatsApp)"
+                                            >
+                                                <Share className="w-5 h-5" />
+                                            </button>
                                             <button
                                                 onClick={() => onEdit(order)}
                                                 className="p-2 hover:bg-blue-50 rounded-full text-blue-600 transition-colors"
