@@ -33,7 +33,8 @@ app.use(
 			if (
 				allowedOrigins.includes(origin) ||
 				origin.includes('localhost') ||
-				origin.includes('127.0.0.1')
+				origin.includes('127.0.0.1') ||
+				origin.endsWith('.vercel.app')
 			) {
 				return callback(null, true)
 			}
