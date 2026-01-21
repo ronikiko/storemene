@@ -125,108 +125,89 @@ const OrderPicker: React.FC = () => {
     return (
         <div className="min-h-screen bg-pearl pb-32" dir="rtl">
             {/* Header */}
-            <div className="glass sticky top-0 z-50 border-b border-coffee-100/50 p-6">
-                <div className="container mx-auto flex items-center justify-between">
-                    <div className="text-right">
-                        <h1 className="text-2xl font-black text-coffee-950">ליקוט הזמנה</h1>
-                        <p className="text-sm font-bold text-coffee-400 uppercase tracking-widest">{order.id}</p>
+            <div className="glass sticky top-0 z-50 border-b border-coffee-100/50 p-4 sm:p-6">
+                <div className="container mx-auto flex items-center justify-between gap-4">
+                    <div className="text-right flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h1 className="text-xl sm:text-2xl font-black text-coffee-950 truncate">ליקוט הזמנה</h1>
+                            <span className="text-[10px] font-black text-coffee-400 bg-coffee-50 px-2 py-0.5 rounded-md border border-coffee-100">{order.id}</span>
+                        </div>
+                        <p className="text-xs sm:text-sm font-bold text-coffee-600 truncate">
+                            {order.customerName} • {order.customerPhone}
+                        </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className={`px-4 py-2 rounded-full text-xs font-black shadow-sm ${pendingCount === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                            {pendingCount === 0 ? 'כל הפריטים טופלו' : `${pendingCount} פריטים נותרו`}
+                    <div className="flex items-center shrink-0">
+                        <div className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-black shadow-sm ${pendingCount === 0 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                            {pendingCount === 0 ? 'הושלם' : `${pendingCount} נותרו`}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 py-8">
-                {/* Customer Info Card */}
-                <div className="glass p-6 rounded-[2rem] premium-shadow border border-white/50 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex items-center gap-4 text-right w-full">
-                        <div className="w-16 h-16 bg-coffee-900 rounded-2xl flex items-center justify-center text-champagne-400">
-                            <Package className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <div className="text-[10px] font-black text-coffee-400 uppercase tracking-widest mb-1">לקוח</div>
-                            <div className="text-xl font-black text-coffee-950">{order.customerName}</div>
-                            <div className="text-sm font-bold text-coffee-500">{order.customerPhone} | {order.customerAddress || 'אין כתובת'}</div>
-                        </div>
-                    </div>
-                </div>
-
+            <div className="container mx-auto px-4 py-6">
                 {/* Items List */}
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map((item: any) => {
                         const currentPicked = pickedQuantities[ item.id ] || 0;
                         const isChanged = currentPicked !== item.quantity;
+                        const status = itemsStatus[ item.id ];
 
                         return (
-                            <div key={item.id} className={`glass p-6 rounded-[2.5rem] border transition-all duration-300 premium-shadow ${itemsStatus[ item.id ] === 'collected' ? 'border-green-200 bg-green-50/30' : itemsStatus[ item.id ] === 'out_of_stock' ? 'border-red-200 bg-red-50/30' : 'border-white/50'}`}>
-                                <div className="flex flex-col items-center text-center sm:flex-row sm:text-right sm:items-center gap-6">
-                                    {/* Product Image */}
-                                    <div className="relative shrink-0">
-                                        <img
-                                            src={item.imageUrl}
-                                            className="w-32 h-32 sm:w-24 sm:h-24 object-cover rounded-[2rem] shadow-md border border-coffee-100 bg-white"
-                                            onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/150')}
-                                        />
-                                        {itemsStatus[ item.id ] !== 'pending' && (
-                                            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10 animate-in zoom-in duration-300">
-                                                {itemsStatus[ item.id ] === 'collected' ? (
-                                                    <div className="bg-green-500 text-white w-full h-full rounded-full flex items-center justify-center"><Check className="w-4 h-4" /></div>
-                                                ) : (
-                                                    <div className="bg-red-500 text-white w-full h-full rounded-full flex items-center justify-center"><X className="w-4 h-4" /></div>
-                                                )}
-                                            </div>
-                                        )}
+                            <div key={item.id} className={`glass p-3 sm:p-4 rounded-[1.5rem] border transition-all duration-300 premium-shadow flex items-center gap-4 ${status === 'collected' ? 'border-green-200 bg-green-50/20' : status === 'out_of_stock' ? 'border-red-200 bg-red-50/20' : 'border-white'}`}>
+                                {/* Product Image */}
+                                <div className="relative shrink-0">
+                                    <img
+                                        src={item.imageUrl}
+                                        className="w-20 h-20 object-cover rounded-[1.2rem] shadow-sm border border-coffee-100 bg-white"
+                                        onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/150')}
+                                    />
+                                    {status !== 'pending' && (
+                                        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10 animate-in zoom-in duration-300">
+                                            {status === 'collected' ? (
+                                                <div className="bg-green-500 text-white w-full h-full rounded-full flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
+                                            ) : (
+                                                <div className="bg-red-500 text-white w-full h-full rounded-full flex items-center justify-center"><X className="w-3.5 h-3.5" /></div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Info & Controls */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="mb-2">
+                                        <h3 className="text-base font-black text-coffee-950 leading-tight truncate">{item.title}</h3>
+                                        <p className="text-[10px] font-bold text-coffee-400">
+                                            ₪{item.price?.toLocaleString()} • הזמנה: {item.quantity}
+                                        </p>
                                     </div>
 
-                                    {/* Info & Controls */}
-                                    <div className="flex-1 w-full space-y-4">
-                                        <div>
-                                            <h3 className="text-xl font-black text-coffee-950 leading-tight">{item.title}</h3>
-                                            <p className="text-sm font-bold text-coffee-400">₪{item.price?.toLocaleString()} ליח'</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center bg-gray-50 p-0.5 rounded-xl border border-coffee-100">
+                                            <button
+                                                onClick={() => updateQuantity(item.id, -1)}
+                                                className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all text-coffee-600 active:scale-90"
+                                            >-</button>
+                                            <span className="font-black text-sm min-w-[3ch] text-center text-coffee-950">{currentPicked}</span>
+                                            <button
+                                                onClick={() => updateQuantity(item.id, 1)}
+                                                className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all text-coffee-600 active:scale-90"
+                                            >+</button>
                                         </div>
 
-                                        <div className="flex flex-col gap-3">
-                                            {/* Quantity Selector */}
-                                            <div className="flex items-center justify-center sm:justify-start gap-4">
-                                                <div className="flex items-center bg-gray-100/80 p-1 rounded-2xl border border-gray-200 shadow-inner">
-                                                    <button
-                                                        onClick={() => updateQuantity(item.id, -1)}
-                                                        className="w-10 h-10 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-xl transition-all text-coffee-600 active:scale-90"
-                                                    >-</button>
-                                                    <span className="font-black text-xl min-w-[3ch] text-center text-coffee-950">{currentPicked}</span>
-                                                    <button
-                                                        onClick={() => updateQuantity(item.id, 1)}
-                                                        className="w-10 h-10 flex items-center justify-center hover:bg-white hover:shadow-sm rounded-xl transition-all text-coffee-600 active:scale-90"
-                                                    >+</button>
-                                                </div>
-
-                                                <div className="flex flex-col items-start gap-0.5">
-                                                    {isChanged && <span className="text-[10px] font-black text-red-500 bg-red-50 px-2 py-0.5 rounded-md line-through">הוזמן: {item.quantity}</span>}
-                                                    <span className={`text-sm font-black ${isChanged ? 'text-green-600' : 'text-coffee-400'}`}>לוקט: {currentPicked}</span>
-                                                </div>
-                                            </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                onClick={() => toggleStatus(item.id, 'out_of_stock')}
+                                                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${status === 'out_of_stock' ? 'bg-red-600 text-white shadow-md' : 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100'}`}
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => toggleStatus(item.id, 'collected')}
+                                                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${status === 'collected' ? 'bg-green-600 text-white shadow-md' : 'bg-green-50 text-green-600 border border-green-100 hover:bg-green-100'}`}
+                                            >
+                                                <Check className="w-5 h-5" />
+                                            </button>
                                         </div>
-                                    </div>
-
-                                    {/* Large Status Buttons */}
-                                    <div className="flex items-center gap-3 pt-2 sm:pt-0">
-                                        <button
-                                            onClick={() => toggleStatus(item.id, 'out_of_stock')}
-                                            className={`w-14 h-14 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all ${itemsStatus[ item.id ] === 'out_of_stock' ? 'bg-red-600 text-white shadow-lg scale-110' : 'bg-white text-red-600 border-2 border-red-100 hover:bg-red-50 active:scale-95'}`}
-                                            title="אין במלאי"
-                                        >
-                                            <X className="w-7 h-7 sm:w-6 sm:h-6" />
-                                        </button>
-                                        <button
-                                            onClick={() => toggleStatus(item.id, 'collected')}
-                                            className={`w-14 h-14 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all ${itemsStatus[ item.id ] === 'collected' ? 'bg-green-600 text-white shadow-lg scale-110' : 'bg-white text-green-600 border-2 border-green-100 hover:bg-green-50 active:scale-95'}`}
-                                            title="נאסף"
-                                        >
-                                            <Check className="w-7 h-7 sm:w-6 sm:h-6" />
-                                        </button>
                                     </div>
                                 </div>
                             </div>

@@ -8,8 +8,10 @@ import crypto from 'crypto'
 
 const MANAGER_PHONE = process.env.MANAGER_PHONE || '972543087670'
 const FRONTEND_URL =
-	process.env.FRONTEND_URL ||
-	'https://storemene-u4yv-git-main-ronikikos-projects.vercel.app'
+	process.env.NODE_ENV === 'develpment'
+		? 'http://localhost:3002'
+		: process.env.FRONTEND_URL ||
+			'https://storemene-u4yv-git-main-ronikikos-projects.vercel.app'
 
 const router = express.Router()
 
