@@ -10,6 +10,7 @@
             ],
             "program": "${workspaceFolder}/server/src/index.js",
             "cwd": "${workspaceFolder}/server",
+            "runtimeExecutable": "/usr/local/bin/node",
             "env": {
                 "PORT": "3001"
             },
@@ -30,6 +31,7 @@
             "name": "Full Stack",
             "type": "node",
             "request": "launch",
+            "runtimeExecutable": "/usr/local/bin/node",
             "compounds": [
                 {
                     "name": "Debug Server",

@@ -1,8 +1,9 @@
-const API_BASE_URL = 'https://storemene.vercel.app/api';
+// const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://storemene.vercel.app/api';
 // const API_BASE_URL = 'http://localhost:3001/api';
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://storemene.vercel.app/api';
 // Helper function for API calls
 async function apiCall(endpoint: string, options: RequestInit = {}) {
+    console.log(import.meta.env.VITE_API_BASE_URL, 'API_BASE_URL')
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
             'Content-Type': 'application/json',
