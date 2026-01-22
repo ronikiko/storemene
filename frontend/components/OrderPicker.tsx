@@ -159,7 +159,10 @@ const OrderPicker: React.FC = () => {
                                     <img
                                         src={item.imageUrl}
                                         className="w-20 h-20 object-cover rounded-[1.2rem] shadow-sm border border-coffee-100 bg-white"
-                                        onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/150')}
+                                    // onError={(e) => {
+                                    //     e.currentTarget.onerror = null;
+                                    //     e.currentTarget.src = 'https://via.placeholder.com/150';
+                                    // }}
                                     />
                                     {status !== 'pending' && (
                                         <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10 animate-in zoom-in duration-300">
