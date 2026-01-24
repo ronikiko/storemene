@@ -92,6 +92,7 @@ const App: React.FC = () => {
   // --- Loading & Error States ---
   const [ isLoading, setIsLoading ] = useState(true);
   const [ error, setError ] = useState<string | null>(null);
+  const [ isAuthChecked, setIsAuthChecked ] = useState(false);
 
   // --- Navigation & Auth ---
   const navigate = useNavigate();
@@ -177,7 +178,6 @@ const App: React.FC = () => {
     fetchData();
   }, []);
 
-  // --- Session Check ---
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -185,6 +185,8 @@ const App: React.FC = () => {
         setIsAdminAuthenticated(true);
       } catch (err) {
         setIsAdminAuthenticated(false);
+      } finally {
+        setIsAuthChecked(true);
       }
     };
     checkSession();
@@ -695,8 +697,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      {/* Loading State */}
-      {isLoading && (
+      {(!isAuthChecked || isLoading) && (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-coffee-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -706,7 +707,7 @@ const App: React.FC = () => {
       )}
 
       {/* Error State */}
-      {!isLoading && error && (
+      {isAuthChecked && !isLoading && error && (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
           <div className="text-center max-w-md">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -726,7 +727,7 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content */}
-      {!isLoading && !error && (
+      {isAuthChecked && !isLoading && !error && (
         <>
           <Routes>
             <Route path="/" element={
