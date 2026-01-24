@@ -8,6 +8,7 @@ import {
 	whatsAppService,
 	rivchitService,
 } from '../services/index.js'
+import { authMiddleware, adminMiddleware } from '../authMiddleware.js'
 
 const MANAGER_PHONE = process.env.MANAGER_PHONE || '972543087670'
 const FRONTEND_URL =
@@ -19,7 +20,7 @@ const FRONTEND_URL =
 const router = express.Router()
 
 // GET all orders with items
-router.get('/', async (req, res) => {
+router.get('/', adminMiddleware, async (req, res) => {
 	try {
 		const allOrders = await db
 			.select()
@@ -44,7 +45,7 @@ router.get('/', async (req, res) => {
 })
 
 // POST create order
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
 	try {
 		const {
 			id,
@@ -58,13 +59,17 @@ router.post('/', async (req, res) => {
 			status,
 		} = req.body
 
+		// Use authenticated customer info if available
+		const finalCustomerId = req.isCustomer ? req.user.id : customerId
+		const finalCustomerName = req.isCustomer ? req.user.name : customerName
+
 		// Insert order
 		const [newOrder] = await db
 			.insert(orders)
 			.values({
 				id,
-				customerId,
-				customerName,
+				customerId: finalCustomerId,
+				customerName: finalCustomerName,
 				customerPhone,
 				customerAddress,
 				totalAmount,
@@ -89,7 +94,12 @@ router.post('/', async (req, res) => {
 					}),
 				),
 			)
-			const orderData = { customerName, items, totalAmount, discountPercent }
+			const orderData = {
+				customerName: finalCustomerName,
+				items,
+				totalAmount,
+				discountPercent,
+			}
 			const rivhitRes = await rivchitService.createNewOrder(orderData)
 
 			if (rivhitRes?.document_link) {
@@ -212,7 +222,7 @@ router.post('/picking/:token/complete', async (req, res) => {
 })
 
 // PUT update order (with WhatsApp trigger)
-router.put('/:id', async (req, res) => {
+router.put('/:id', adminMiddleware, async (req, res) => {
 	try {
 		const {
 			customerId,
@@ -313,7 +323,7 @@ router.put('/:id', async (req, res) => {
 })
 
 // GET picking link for an order
-router.get('/:id/picking-link', async (req, res) => {
+router.get('/:id/picking-link', adminMiddleware, async (req, res) => {
 	try {
 		const orderId = req.params.id
 		const [order] = await db.select().from(orders).where(eq(orders.id, orderId))
@@ -337,7 +347,7 @@ router.get('/:id/picking-link', async (req, res) => {
 		// const encodedMessage = encodeURIComponent(message)
 		// const waLink = `https://wa.me/${MANAGER_PHONE}?text=${encodedMessage}`
 
-		const result = await telegramService.sendMessage(message)
+		const result = await whatsAppService.sendMessage(MANAGER_PHONE, message)
 		console.log('hi')
 		// const result = await whatsAppService.sendMessage(MANAGER_PHONE, message)
 		// const result = await whatsAppService.sendTemplateMessage(
@@ -357,7 +367,8 @@ router.get('/:id/picking-link', async (req, res) => {
 		// 	],
 		// )
 
-		res.json({ whatsAppLink: waLink, pickingToken })
+		// res.json({ whatsAppLink: waLink, pickingToken })
+		res.json({ result })
 	} catch (error) {
 		res.status(500).json({ error: error.message })
 	}

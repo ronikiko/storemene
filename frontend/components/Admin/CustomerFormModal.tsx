@@ -18,7 +18,8 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, 
     email: '',
     phone: '',
     priceListId: '',
-    token: ''
+    token: '',
+    pin: ''
   });
 
   useEffect(() => {
@@ -28,7 +29,8 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, 
         email: customerToEdit.email,
         phone: customerToEdit.phone,
         priceListId: customerToEdit.priceListId || '',
-        token: customerToEdit.token
+        token: customerToEdit.token,
+        pin: customerToEdit.pin || ''
       });
     } else {
       setFormData({
@@ -36,7 +38,8 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, 
         email: '',
         phone: '',
         priceListId: '',
-        token: ''
+        token: '',
+        pin: ''
       });
     }
   }, [ customerToEdit, isOpen ]);
@@ -108,6 +111,20 @@ const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, 
               className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black outline-none"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">סיסמא (4 ספרות)</label>
+            <input
+              type="text"
+              maxLength={4}
+              pattern="\d*"
+              inputMode="numeric"
+              className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black outline-none"
+              value={formData.pin}
+              placeholder="למשל: 1234"
+              onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '') })}
             />
           </div>
 

@@ -13,8 +13,10 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(error.error || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+        const err: any = new Error(errorData.error || `HTTP ${response.status}`);
+        err.status = response.status;
+        throw err;
     }
 
     return response.json();
@@ -90,9 +92,9 @@ export const priceListsApi = {
 
 // Auth API
 export const authApi = {
-    authenticateCustomer: (token: string) => apiCall('/auth/customer', {
+    authenticateCustomer: (token: string, pin: string) => apiCall('/auth/customer', {
         method: 'POST',
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, pin }),
     }),
     loginAdmin: (credentials: { email: string; password: string }) => apiCall('/auth/admin/login', {
         method: 'POST',
@@ -102,6 +104,8 @@ export const authApi = {
         method: 'POST',
     }),
     getMe: () => apiCall('/auth/admin/me'),
+    getCustomerMe: () => apiCall('/auth/customer/me'),
+    getCustomerPublicInfo: (token: string) => apiCall(`/auth/customer/info/${token}`),
 };
 
 // Users API

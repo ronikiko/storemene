@@ -9,10 +9,29 @@ import { authMiddleware } from '../authMiddleware.js'
 const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
-// POST authenticate customer by token
+// GET public customer info for PIN modal
+router.get('/customer/info/:token', async (req, res) => {
+	try {
+		const { token } = req.params
+		const [customer] = await db
+			.select({ name: customers.name, token: customers.token })
+			.from(customers)
+			.where(eq(customers.token, token))
+
+		if (!customer) {
+			return res.status(404).json({ error: 'Customer not found' })
+		}
+
+		res.json(customer)
+	} catch (error) {
+		res.status(500).json({ error: error.message })
+	}
+})
+
+// POST authenticate customer by token and pin
 router.post('/customer', async (req, res) => {
 	try {
-		const { token } = req.body
+		const { token, pin } = req.body
 
 		if (!token) {
 			return res.status(400).json({ error: 'Token is required' })
@@ -27,10 +46,44 @@ router.post('/customer', async (req, res) => {
 			return res.status(404).json({ error: 'Customer not found' })
 		}
 
+		// Verify PIN
+		if (!pin || customer.pin !== pin) {
+			return res.status(401).json({ error: 'Invalid PIN' })
+		}
+
+		// Create JWT token for customer
+		const jwtToken = jwt.sign(
+			{
+				id: customer.id,
+				name: customer.name,
+				type: 'customer',
+				token: customer.token,
+				priceListId: customer.priceListId,
+			},
+			JWT_SECRET,
+			{ expiresIn: '30d' },
+		)
+
+		// Set secure HTTP-only cookie
+		res.cookie('customer_token', jwtToken, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'lax',
+			maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+		})
+
 		res.json(customer)
 	} catch (error) {
 		res.status(500).json({ error: error.message })
 	}
+})
+
+// GET current customer info
+router.get('/customer/me', authMiddleware, async (req, res) => {
+	if (!req.isCustomer) {
+		return res.status(403).json({ error: 'Customer access required' })
+	}
+	res.json(req.user)
 })
 
 // POST admin login

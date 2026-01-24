@@ -2,9 +2,11 @@ import express from 'express'
 import { db } from '../db/index.js'
 import { customers } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
-// import { rivchitService } from '../services/RivchitService.js'
+import { adminMiddleware } from '../authMiddleware.js'
 
 const router = express.Router()
+
+router.use(adminMiddleware)
 
 // GET all customers
 router.get('/', async (req, res) => {
@@ -39,7 +41,7 @@ router.get('/:id', async (req, res) => {
 // POST create customer
 router.post('/', async (req, res) => {
 	try {
-		const { id, name, email, phone, priceListId, token } = req.body
+		const { id, name, email, phone, priceListId, token, pin } = req.body
 
 		const [newCustomer] = await db
 			.insert(customers)
@@ -50,6 +52,7 @@ router.post('/', async (req, res) => {
 				phone,
 				priceListId: priceListId || null,
 				token,
+				pin,
 			})
 			.returning()
 
@@ -62,7 +65,7 @@ router.post('/', async (req, res) => {
 // PUT update customer
 router.put('/:id', async (req, res) => {
 	try {
-		const { name, email, phone, priceListId } = req.body
+		const { name, email, phone, priceListId, pin } = req.body
 
 		const [updatedCustomer] = await db
 			.update(customers)
@@ -71,6 +74,7 @@ router.put('/:id', async (req, res) => {
 				email,
 				phone,
 				priceListId: priceListId || null,
+				pin,
 			})
 			.where(eq(customers.id, req.params.id))
 			.returning()

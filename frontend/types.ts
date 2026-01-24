@@ -34,6 +34,7 @@ export interface Customer {
   phone: string;
   priceListId?: string; // Optional link to a price list
   token: string;
+  pin?: string;
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'ready_for_shipping' | 'shipped' | 'delivered' | 'cancelled';

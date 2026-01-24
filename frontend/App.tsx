@@ -5,6 +5,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate, useSearchParams } fr
 import CategoryNav from './components/CategoryNav';
 import ProductCard from './components/ProductCard';
 import QuickViewModal from './components/QuickViewModal';
+import CustomerPINModal from './components/CustomerPINModal';
 import CartPage from './components/CartPage';
 import AdminLogin from './components/Admin/AdminLogin';
 import AdminDashboard from './components/Admin/AdminDashboard';
@@ -99,9 +100,13 @@ const App: React.FC = () => {
   const location = useLocation();
   const [ searchParams ] = useSearchParams();
   const [ isAdminAuthenticated, setIsAdminAuthenticated ] = useState(false);
+  const [ isCustomerAuthenticated, setIsCustomerAuthenticated ] = useState(false);
+  const [ showPINModal, setShowPINModal ] = useState(false);
+  const [ pinTargetCustomer, setPinTargetCustomer ] = useState<Customer | null>(null);
 
   // --- Session State (Simulation) ---
   const [ activeCustomerId, setActiveCustomerId ] = useState<string | null>(null);
+  const [ currentCustomer, setCurrentCustomer ] = useState<any>(null);
 
   // --- Shopping State ---
   const [ cartItems, setCartItems ] = useState<CartItem[]>([]);
@@ -143,22 +148,25 @@ const App: React.FC = () => {
   // --- Fetch Data from Backend ---
   useEffect(() => {
     const fetchData = async () => {
+      if (!isAuthChecked) return;
+
+      // If not authenticated, we don't fetch anything that requires auth
+      if (!isAdminAuthenticated && !isCustomerAuthenticated) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
-        const [ productsData, categoriesData, customersData, priceListsData, settingsData, ordersData ] = await Promise.all([
+        // Data available to both Admin and Customer (Products, Categories, Settings)
+        const [ productsData, categoriesData, settingsData ] = await Promise.all([
           productsApi.getAll(),
           categoriesApi.getAll(),
-          customersApi.getAll(),
-          priceListsApi.getAll(),
           settingsApi.getAll(),
-          ordersApi.getAll(),
         ]);
 
         setProducts(productsData);
         setCategories(categoriesData);
-        setCustomers(customersData);
-        setPriceLists(priceListsData);
-        setOrders(ordersData);
 
         // Load show_prices setting
         const showPricesSetting = settingsData.find((s: any) => s.id === 'show_prices');
@@ -166,9 +174,29 @@ const App: React.FC = () => {
           setShowPrices(showPricesSetting.value === 'true');
         }
 
+        if (isAdminAuthenticated) {
+          const [ customersData, priceListsData, ordersData ] = await Promise.all([
+            customersApi.getAll(),
+            priceListsApi.getAll(),
+            ordersApi.getAll(),
+          ]);
+          setCustomers(customersData);
+          setPriceLists(priceListsData);
+          setOrders(ordersData);
+        } else if (isCustomerAuthenticated && currentCustomer?.priceListId) {
+          try {
+            const plData = await priceListsApi.getById(currentCustomer.priceListId);
+            setPriceLists([ plData ]);
+          } catch (err) {
+            console.error('Failed to fetch customer price list:', err);
+          }
+        }
+
         setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } catch (err: any) {
+        if (err.status !== 401 && err.status !== 403) {
+          setError(err instanceof Error ? err.message : 'Failed to load data');
+        }
         console.error('Failed to fetch data:', err);
       } finally {
         setIsLoading(false);
@@ -176,47 +204,70 @@ const App: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [ isAuthChecked, isAdminAuthenticated, isCustomerAuthenticated ]);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const checkSessions = async () => {
       try {
-        await authApi.getMe();
-        setIsAdminAuthenticated(true);
-      } catch (err) {
-        setIsAdminAuthenticated(false);
+        // Check Admin
+        try {
+          await authApi.getMe();
+          setIsAdminAuthenticated(true);
+        } catch (err) {
+          setIsAdminAuthenticated(false);
+        }
+
+        // Check Customer
+        try {
+          const customerSession = await authApi.getCustomerMe();
+          setIsCustomerAuthenticated(true);
+          setActiveCustomerId(customerSession.id);
+          setCurrentCustomer(customerSession);
+        } catch (err) {
+          setIsCustomerAuthenticated(false);
+        }
+
       } finally {
         setIsAuthChecked(true);
       }
     };
-    checkSession();
+    checkSessions();
   }, []);
 
   // --- URL Customer Token Logic ---
   useEffect(() => {
     const tokenParam = searchParams.get('token');
-    if (tokenParam && customers.length > 0) {
-      const customerExists = customers.find(c => c.token === tokenParam);
-      if (customerExists) {
-        setActiveCustomerId(customerExists.id);
+    if (!tokenParam) return;
+
+    const fetchCustomerInfo = async () => {
+      try {
+        const customer = await authApi.getCustomerPublicInfo(tokenParam);
+        // If not already authenticated as THIS customer, show PIN modal
+        if (!isCustomerAuthenticated || activeCustomerId !== customer.id) {
+          setPinTargetCustomer(customer);
+          setShowPINModal(true);
+        }
+      } catch (err) {
+        console.error('Failed to fetch customer info:', err);
       }
-    }
-  }, [ customers, searchParams ]);
+    };
+
+    fetchCustomerInfo();
+  }, [ searchParams, isCustomerAuthenticated, activeCustomerId ]);
 
   // --- Cart Logic ---
   const cartCount = useMemo(() => cartItems.reduce((acc, item) => acc + item.quantity, 0), [ cartItems ]);
 
   const currentCustomerName = useMemo(() => {
     if (activeCustomerId) {
-      const customer = customers.find(c => c.id === activeCustomerId);
-      if (customer) {
-        const priceList = customer.priceListId ? priceLists.find(pl => pl.id === customer.priceListId) : null;
-        return priceList ? `${customer.name}` : customer.name;
+      const customer = customers.find(c => c.id === activeCustomerId) || currentCustomer;
+      if (customer && customer.id === activeCustomerId) {
+        return customer.name;
       }
       return null;
     }
     return customers.find(c => c.name === 'לקוח כללי')?.name || 'לקוח כללי';
-  }, [ activeCustomerId, customers, priceLists ]);
+  }, [ activeCustomerId, customers, currentCustomer ]);
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {
     const info = getEffectiveProductInfo(product);
@@ -293,6 +344,40 @@ const App: React.FC = () => {
       success('התנתקת בהצלחה');
     } catch (err) {
       console.error('Logout failed:', err);
+    }
+  };
+
+  const renderBlocked = () => (
+    <div className="min-h-screen bg-coffee-50 flex items-center justify-center p-6">
+      <div className="max-w-md w-full text-center bg-white p-12 rounded-[3rem] shadow-2xl border border-coffee-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-20 h-20 bg-coffee-950 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl">
+          <Lock className="w-10 h-10 text-white" />
+        </div>
+        <h2 className="text-3xl font-black text-coffee-950 mb-4">הגישה מוגבלת</h2>
+        <p className="text-coffee-600 mb-8 leading-relaxed">
+          נא להשתמש בלינק האישי שנשלח אליך כדי לגלוש בקטלוג ולבצע הזמנות.
+        </p>
+        <button
+          onClick={() => navigate('/login')}
+          className="text-coffee-900 font-bold hover:underline"
+        >
+          כניסה למערכת ניהול
+        </button>
+      </div>
+    </div>
+  );
+
+  const handlePINSubmit = async (pin: string) => {
+    if (!pinTargetCustomer) return;
+    try {
+      await authApi.authenticateCustomer(pinTargetCustomer.token, pin);
+      setIsCustomerAuthenticated(true);
+      setActiveCustomerId(pinTargetCustomer.id);
+      setShowPINModal(false);
+      setPinTargetCustomer(null);
+      success('התחברת בהצלחה לקטלוג');
+    } catch (err: any) {
+      throw new Error(err.message || 'סיסמא שגויה');
     }
   };
 
@@ -707,7 +792,7 @@ const App: React.FC = () => {
       )}
 
       {/* Error State */}
-      {isAuthChecked && !isLoading && error && (
+      {isAuthChecked && !isLoading && error && location.pathname !== '/login' && (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
           <div className="text-center max-w-md">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -726,29 +811,45 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Main Content */}
       {isAuthChecked && !isLoading && !error && (
         <>
+          {showPINModal && pinTargetCustomer && (
+            <CustomerPINModal
+              isOpen={showPINModal}
+              onClose={() => setShowPINModal(false)}
+              onSubmit={handlePINSubmit}
+              customerName={pinTargetCustomer.name}
+            />
+          )}
+
           <Routes>
             <Route path="/" element={
-              <Layout
-                cartCount={cartCount}
-                currentCustomerName={currentCustomerName}
-                cartAnimating={cartAnimating}
-                isAdminAuthenticated={isAdminAuthenticated}
-              >
-                {renderHome()}
-              </Layout>
+              (isAdminAuthenticated || isCustomerAuthenticated) ? (
+                <Layout
+                  cartCount={cartCount}
+                  currentCustomerName={currentCustomerName}
+                  cartAnimating={cartAnimating}
+                  isAdminAuthenticated={isAdminAuthenticated}
+                >
+                  {renderHome()}
+                </Layout>
+              ) : (
+                renderBlocked()
+              )
             } />
             <Route path="/checkout" element={
-              <Layout
-                cartCount={cartCount}
-                currentCustomerName={currentCustomerName}
-                cartAnimating={cartAnimating}
-                isAdminAuthenticated={isAdminAuthenticated}
-              >
-                {renderCheckout()}
-              </Layout>
+              (isAdminAuthenticated || isCustomerAuthenticated) ? (
+                <Layout
+                  cartCount={cartCount}
+                  currentCustomerName={currentCustomerName}
+                  cartAnimating={cartAnimating}
+                  isAdminAuthenticated={isAdminAuthenticated}
+                >
+                  {renderCheckout()}
+                </Layout>
+              ) : (
+                <Navigate to="/" />
+              )
             } />
             <Route path="/login" element={renderLogin()} />
             <Route path="/picker/:token" element={<OrderPicker />} />

@@ -3,12 +3,12 @@ import { db } from '../db/index.js'
 import { users } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
-import { authMiddleware } from '../authMiddleware.js'
+import { adminMiddleware } from '../authMiddleware.js'
 
 const router = express.Router()
 
-// All user routes are protected by authMiddleware
-router.use(authMiddleware)
+// All user routes are protected by adminMiddleware
+router.use(adminMiddleware)
 
 // GET all users (limited info)
 router.get('/', async (req, res) => {

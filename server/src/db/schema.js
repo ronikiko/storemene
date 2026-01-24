@@ -38,6 +38,7 @@ export const customers = pgTable('customers', {
 	phone: text('phone').notNull(),
 	priceListId: text('price_list_id'),
 	token: text('token').notNull().unique(),
+	pin: varchar('pin', { length: 4 }),
 })
 
 // Price Lists table

@@ -678,6 +678,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <th className="px-6 py-4">אימייל</th>
                       <th className="px-6 py-4">טלפון</th>
                       <th className="px-6 py-4">מחירון</th>
+                      <th className="px-6 py-4">סיסמא</th>
                       <th className="px-6 py-4">פעולות</th>
                     </tr>
                   </thead>
@@ -693,6 +694,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               {priceLists.find(pl => pl.id === customer.priceListId)?.name || customer.priceListId}
                             </span>
                           ) : <span className="text-gray-400 text-xs">רגיל</span>}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-black text-coffee-900 bg-coffee-50 px-2 py-1 rounded-lg border border-coffee-100">
+                            {customer.pin || '----'}
+                          </span>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
