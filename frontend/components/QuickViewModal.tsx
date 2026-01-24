@@ -54,7 +54,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center sm:px-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
@@ -62,7 +62,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white w-[95vw] sm:w-[85vw] md:w-[70vw] lg:w-[45vw] max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col max-h-[95vh] group/modal border border-coffee-100/30">
+      <div className="relative bg-white w-full h-full sm:w-[85vw] md:w-[70vw] lg:w-[45vw] max-w-2xl sm:rounded-[3rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col sm:max-h-[95vh] group/modal border-coffee-100/30">
 
         {/* Navigation Buttons */}
         <button
@@ -84,14 +84,14 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 z-30 p-3 bg-white/90 hover:bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all text-coffee-400 hover:text-coffee-900 border border-coffee-100"
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 p-2 sm:p-3 bg-white/90 hover:bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all text-coffee-400 hover:text-coffee-900 border border-coffee-100"
         >
-          <X className="w-6 h-6" />
+          <X className="w-2 h-2 sm:w-2 h-2" />
         </button>
 
 
         {/* Image Section */}
-        <div className="w-full bg-pearl h-[60vh] sm:h-[65vh] relative group overflow-hidden border-b border-coffee-100/50">
+        <div className="w-full bg-pearl h-[55vh] sm:h-[65vh] relative group overflow-hidden border-b border-coffee-100/50">
           <img
             src={product.imageUrl}
             alt={product.title}
@@ -105,7 +105,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
         </div>
 
         {/* Details Section */}
-        <div className="w-full p-8 md:p-10 flex flex-col overflow-y-auto no-scrollbar bg-white flex-1">
+        <div className="w-full p-6 sm:p-10 flex flex-col overflow-y-auto no-scrollbar bg-white flex-1">
           <div className="mb-2 text-coffee-400 text-[10px] font-black uppercase tracking-[0.2em]">{product.category}</div>
           <h2 className="text-3xl md:text-4xl font-black text-coffee-950 mb-6 leading-tight font-serif italic">{product.title}</h2>
 

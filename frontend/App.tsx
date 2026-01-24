@@ -41,7 +41,7 @@ const Layout: React.FC<LayoutProps> = ({
   const handleTabChange = (tabId: string) => {
     if (tabId === 'home') navigate('/');
     if (tabId === 'cart') navigate('/checkout');
-    if (tabId === 'profile') navigate(isAdminAuthenticated ? '/admin' : '/login');
+    if (tabId === 'profile') navigate(isAdminAuthenticated ? '/admin/products' : '/login');
     if (tabId === 'categories') {
       navigate('/');
       setTimeout(() => {
@@ -279,7 +279,7 @@ const App: React.FC = () => {
   // --- Auth Handler ---
   const handleLogin = () => {
     setIsAdminAuthenticated(true);
-    navigate('/admin');
+    navigate('/admin/products');
     success('התחברת בהצלחה');
   };
 
@@ -751,7 +751,7 @@ const App: React.FC = () => {
             } />
             <Route path="/login" element={renderLogin()} />
             <Route path="/picker/:token" element={<OrderPicker />} />
-            <Route path="/admin" element={isAdminAuthenticated ? renderAdmin() : <Navigate to="/login" />} />
+            <Route path="/admin/*" element={isAdminAuthenticated ? renderAdmin() : <Navigate to="/login" />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
 

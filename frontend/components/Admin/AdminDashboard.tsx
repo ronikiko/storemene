@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { Product, Category, Customer, PriceList, Order } from '../../types';
 import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, HelpCircle, DollarSign, Search, ShoppingBag, X, ArrowRight, AlertTriangle, Lock, Flame, Coffee, Apple, Milk, Croissant, Sparkles } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
@@ -65,7 +66,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   showPrices, onUpdateShowPrices,
   onLogout, onGoHome
 }) => {
-  const [ activeTab, setActiveTab ] = useState<'products' | 'categories' | 'customers' | 'pricelists' | 'orders' | 'users'>('products');
+  const navigate = useNavigate();
+  const { "*": splat } = useParams();
+  const activeTab = splat || 'products';
   const [ systemUsers, setSystemUsers ] = useState<any[]>([]);
   const [ isUserModalOpen, setIsUserModalOpen ] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -529,7 +532,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => navigate(`/admin/${tab.id}`)}
                 className={`
                   flex items-center gap-3 px-6 py-3.5 font-black text-xs transition-all rounded-2xl whitespace-nowrap
                   ${activeTab === tab.id
@@ -594,251 +597,262 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Content Table */}
         <div className="glass rounded-[2rem] premium-shadow overflow-hidden border border-white/50">
-          <div className="overflow-x-auto">
-            {activeTab === 'products' && (
-              <table className="w-full text-right">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
-                  <tr>
-                    <th className="px-6 py-4">תמונה</th>
-                    <th className="px-6 py-4">שם מוצר</th>
-                    <th className="px-6 py-4">קטגוריה</th>
-                    <th className="px-6 py-4">מחיר</th>
-                    <th className="px-6 py-4">פעולות</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <img src={product.imageUrl} alt="" className="w-12 h-12 object-cover rounded-lg border border-gray-200" />
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900">{product.title}</td>
-                      <td className="px-6 py-4 text-gray-500 text-sm">{categories.find(c => c.id === product.category)?.name || product.category}</td>
-                      <td className="px-6 py-4 font-bold">₪{product.price.toFixed(2)}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => handleDeleteClick('product', product.id, product.title)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </td>
+          <Routes>
+            <Route path="products" element={
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                    <tr>
+                      <th className="px-6 py-4">תמונה</th>
+                      <th className="px-6 py-4">שם מוצר</th>
+                      <th className="px-6 py-4">קטגוריה</th>
+                      <th className="px-6 py-4">מחיר</th>
+                      <th className="px-6 py-4">פעולות</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {activeTab === 'categories' && (
-              <table className="w-full text-right">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
-                  <tr>
-                    <th className="px-6 py-4">אייקון</th>
-                    <th className="px-6 py-4">מזהה</th>
-                    <th className="px-6 py-4">שם</th>
-                    <th className="px-6 py-4">פעולות</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedCategories.map((cat) => {
-                    const IconComponent = iconMap[ cat.icon ] || HelpCircle;
-                    return (
-                      <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedProducts.map((product) => (
+                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-                            <IconComponent className="w-6 h-6" />
-                          </div>
+                          <img src={product.imageUrl} alt="" className="w-12 h-12 object-cover rounded-lg border border-gray-200" />
                         </td>
-                        <td className="px-6 py-4 text-sm font-mono">{cat.id}</td>
-                        <td className="px-6 py-4 font-bold">{cat.name}</td>
+                        <td className="px-6 py-4 font-medium text-gray-900">{product.title}</td>
+                        <td className="px-6 py-4 text-gray-500 text-sm">{categories.find(c => c.id === product.category)?.name || product.category}</td>
+                        <td className="px-6 py-4 font-bold">₪{product.price.toFixed(2)}</td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
-                            <button onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                            <button onClick={() => handleDeleteClick('category', cat.id, cat.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => { setEditingProduct(product); setIsProductModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteClick('product', product.id, product.title)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-
-            {activeTab === 'customers' && (
-              <table className="w-full text-right">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
-                  <tr>
-                    <th className="px-6 py-4">שם הלקוח</th>
-                    <th className="px-6 py-4">אימייל</th>
-                    <th className="px-6 py-4">טלפון</th>
-                    <th className="px-6 py-4">מחירון</th>
-                    <th className="px-6 py-4">פעולות</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedCustomers.map((customer) => (
-                    <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-bold">{customer.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{customer.email}</td>
-                      <td className="px-6 py-4 text-sm">{customer.phone}</td>
-                      <td className="px-6 py-4">
-                        {customer.priceListId ? (
-                          <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">
-                            {priceLists.find(pl => pl.id === customer.priceListId)?.name || customer.priceListId}
-                          </span>
-                        ) : <span className="text-gray-400 text-xs">רגיל</span>}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              const url = `${window.location.origin}?token=${customer.token}`;
-                              navigator.clipboard.writeText(url);
-                              alert('הקישור הועתק ללוח: ' + url);
-                            }}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-full"
-                            title="העתק קישור לחנות"
-                          >
-                            <LinkIcon className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => { setEditingCustomer(customer); setIsCustomerModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => handleDeleteClick('customer', customer.id, customer.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {activeTab === 'pricelists' && (
-              <table className="w-full text-right">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
-                  <tr>
-                    <th className="px-6 py-4">שם המחירון</th>
-                    <th className="px-6 py-4">מזהה</th>
-                    <th className="px-6 py-4">מספר מוצרים מתומחרים</th>
-                    <th className="px-6 py-4">פעולות</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedPriceLists.map((pl) => (
-                    <tr key={pl.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-bold">{pl.name}</td>
-                      <td className="px-6 py-4 text-sm font-mono text-gray-500">{pl.id}</td>
-                      <td className="px-6 py-4 text-sm">{Object.keys(pl.prices).length}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setViewingPriceListCustomers(pl)}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-full"
-                            title="צפה בלקוחות משויכים"
-                          >
-                            <Users className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => { setEditingPriceList(pl); setIsPriceListModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => handleDeleteClick('pricelist', pl.id, pl.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {activeTab === 'users' && (
-              <table className="w-full text-right">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
-                  <tr>
-                    <th className="px-6 py-4">שם</th>
-                    <th className="px-6 py-4">אימייל</th>
-                    <th className="px-6 py-4">תפקיד</th>
-                    <th className="px-6 py-4">פעולות</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-bold">{user.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
-                      <td className="px-6 py-4 text-sm">{user.role}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {activeTab === 'orders' && (
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
-              <OrdersTable orders={paginationInfo.data} onUpdateStatus={onUpdateOrder} onEdit={(order) => { setEditingOrder(order); setIsOrderModalOpen(true); }} />
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {paginationInfo.total > 0 && (
-            <div className="px-8 py-6 bg-white/50 border-t border-coffee-100/50 flex flex-col sm:flex-row items-center justify-between gap-6">
-              {/* Items per page selector */}
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] font-black text-coffee-400 uppercase tracking-widest">הצג פריטים:</span>
-                <div className="flex bg-pearl p-1 rounded-xl border border-coffee-100 shadow-inner">
-                  {[ 20, 50, 100 ].map(val => (
-                    <button
-                      key={val}
-                      onClick={() => handleItemsPerPageChange(val)}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${itemsPerPage === val ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:text-coffee-600 hover:bg-white'}`}
-                    >
-                      {val}
-                    </button>
-                  ))}
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+            } />
 
-              {/* Status Info */}
-              <div className="text-xs font-bold text-coffee-500 bg-coffee-50 px-4 py-2.5 rounded-full border border-coffee-100/50">
-                מציג <span className="text-coffee-950">{paginationInfo.startIndex}-{paginationInfo.endIndex}</span> מתוך <span className="text-coffee-950">{paginationInfo.total}</span>
+            <Route path="categories" element={
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                    <tr>
+                      <th className="px-6 py-4">אייקון</th>
+                      <th className="px-6 py-4">מזהה</th>
+                      <th className="px-6 py-4">שם</th>
+                      <th className="px-6 py-4">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedCategories.map((cat) => {
+                      const IconComponent = iconMap[ cat.icon ] || HelpCircle;
+                      return (
+                        <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                              <IconComponent className="w-6 h-6" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm font-mono">{cat.id}</td>
+                          <td className="px-6 py-4 font-bold">{cat.name}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <button onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
+                              <button onClick={() => handleDeleteClick('category', cat.id, cat.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
+            } />
 
-              {/* Page Selector */}
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-coffee-100 text-coffee-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-coffee-50 shadow-sm"
-                >
-                  <ArrowRight className="w-4 h-4 rotate-180" />
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: paginationInfo.totalPages }, (_, i) => i + 1)
-                    .filter(p => p === 1 || p === paginationInfo.totalPages || (p >= currentPage - 1 && p <= currentPage + 1))
-                    .map((p, idx, arr) => (
-                      <React.Fragment key={p}>
-                        {idx > 0 && arr[ idx - 1 ] !== p - 1 && <span className="text-coffee-300 mx-1">...</span>}
-                        <button
-                          onClick={() => handlePageChange(p)}
-                          className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${currentPage === p ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:bg-white border border-transparent hover:border-coffee-100'}`}
-                        >
-                          {p}
-                        </button>
-                      </React.Fragment>
-                    ))
-                  }
-                </div>
-
-                <button
-                  disabled={currentPage === paginationInfo.totalPages}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-coffee-100 text-coffee-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-coffee-50 shadow-sm"
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+            <Route path="customers" element={
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                    <tr>
+                      <th className="px-6 py-4">שם הלקוח</th>
+                      <th className="px-6 py-4">אימייל</th>
+                      <th className="px-6 py-4">טלפון</th>
+                      <th className="px-6 py-4">מחירון</th>
+                      <th className="px-6 py-4">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedCustomers.map((customer) => (
+                      <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 font-bold">{customer.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{customer.email}</td>
+                        <td className="px-6 py-4 text-sm">{customer.phone}</td>
+                        <td className="px-6 py-4">
+                          {customer.priceListId ? (
+                            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">
+                              {priceLists.find(pl => pl.id === customer.priceListId)?.name || customer.priceListId}
+                            </span>
+                          ) : <span className="text-gray-400 text-xs">רגיל</span>}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                const url = `${window.location.origin}?token=${customer.token}`;
+                                navigator.clipboard.writeText(url);
+                                alert('הקישור הועתק ללוח: ' + url);
+                              }}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                              title="העתק קישור לחנות"
+                            >
+                              <LinkIcon className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => { setEditingCustomer(customer); setIsCustomerModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteClick('customer', customer.id, customer.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          )}
+            } />
+
+            <Route path="pricelists" element={
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                    <tr>
+                      <th className="px-6 py-4">שם המחירון</th>
+                      <th className="px-6 py-4">מזהה</th>
+                      <th className="px-6 py-4">מספר מוצרים מתומחרים</th>
+                      <th className="px-6 py-4">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedPriceLists.map((pl) => (
+                      <tr key={pl.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 font-bold">{pl.name}</td>
+                        <td className="px-6 py-4 text-sm font-mono text-gray-500">{pl.id}</td>
+                        <td className="px-6 py-4 text-sm">{Object.keys(pl.prices).length}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setViewingPriceListCustomers(pl)}
+                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-full"
+                              title="צפה בלקוחות משויכים"
+                            >
+                              <Users className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => { setEditingPriceList(pl); setIsPriceListModalOpen(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteClick('pricelist', pl.id, pl.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            } />
+
+            <Route path="users" element={
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                    <tr>
+                      <th className="px-6 py-4">שם</th>
+                      <th className="px-6 py-4">אימייל</th>
+                      <th className="px-6 py-4">תפקיד</th>
+                      <th className="px-6 py-4">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 font-bold">{user.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
+                        <td className="px-6 py-4 text-sm">{user.role}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            } />
+
+            <Route path="orders" element={
+              <div className="p-4 bg-gray-50 border-t border-gray-100">
+                <OrdersTable orders={paginationInfo.data} onUpdateStatus={onUpdateOrder} onEdit={(order) => { setEditingOrder(order); setIsOrderModalOpen(true); }} />
+              </div>
+            } />
+
+            <Route path="/" element={<Navigate to="products" replace />} />
+          </Routes>
         </div>
+        {/* Pagination Controls */}
+        {paginationInfo.total > 0 && (
+          <div className="px-8 py-6 bg-white/50 border-t border-coffee-100/50 flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* Items per page selector */}
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-black text-coffee-400 uppercase tracking-widest">הצג פריטים:</span>
+              <div className="flex bg-pearl p-1 rounded-xl border border-coffee-100 shadow-inner">
+                {[ 20, 50, 100 ].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => handleItemsPerPageChange(val)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${itemsPerPage === val ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:text-coffee-600 hover:bg-white'}`}
+                  >
+                    {val}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Status Info */}
+            <div className="text-xs font-bold text-coffee-500 bg-coffee-50 px-4 py-2.5 rounded-full border border-coffee-100/50">
+              מציג <span className="text-coffee-950">{paginationInfo.startIndex}-{paginationInfo.endIndex}</span> מתוך <span className="text-coffee-950">{paginationInfo.total}</span>
+            </div>
+
+            {/* Page Selector */}
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-coffee-100 text-coffee-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-coffee-50 shadow-sm"
+              >
+                <ArrowRight className="w-4 h-4 rotate-180" />
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: paginationInfo.totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === paginationInfo.totalPages || (p >= currentPage - 1 && p <= currentPage + 1))
+                  .map((p, idx, arr) => (
+                    <React.Fragment key={p}>
+                      {idx > 0 && arr[ idx - 1 ] !== p - 1 && <span className="text-coffee-300 mx-1">...</span>}
+                      <button
+                        onClick={() => handlePageChange(p)}
+                        className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${currentPage === p ? 'bg-coffee-900 text-white shadow-xl translate-y-[-1px]' : 'text-coffee-400 hover:bg-white border border-transparent hover:border-coffee-100'}`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))
+                }
+              </div>
+
+              <button
+                disabled={currentPage === paginationInfo.totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-coffee-100 text-coffee-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:bg-coffee-50 shadow-sm"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ProductFormModal
@@ -865,7 +879,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         isOpen={isPriceListModalOpen}
         priceListToEdit={editingPriceList}
         products={products}
-        onClose={() => setIsPriceListModalOpen(false)}
+        onClose={() => setIsProductModalOpen(false)}
         onSave={handleSavePriceList}
       />
       <OrderFormModal
@@ -884,97 +898,101 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       />
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirm.isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-coffee-950/40 backdrop-blur-md" onClick={handleCancelDelete} />
-          <div className="relative bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-[2rem] flex items-center justify-center mb-6">
-                <AlertTriangle className="w-10 h-10" />
-              </div>
-              <h3 className="text-2xl font-black text-coffee-950 mb-3">מחיקת {deleteConfirm.type === 'product' ? 'מוצר' : deleteConfirm.type === 'category' ? 'קטגוריה' : deleteConfirm.type === 'customer' ? 'לקוח' : 'מחירון'}</h3>
-              <p className="text-coffee-500 font-medium mb-8 leading-relaxed">האם את בטוחה שברצונך למחוק את <span className="text-coffee-950 font-bold">{deleteConfirm.name}</span>? פעולה זו אינה ניתנת לביטול.</p>
+      {
+        deleteConfirm.isOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-coffee-950/40 backdrop-blur-md" onClick={handleCancelDelete} />
+            <div className="relative bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-red-50 text-red-600 rounded-[2rem] flex items-center justify-center mb-6">
+                  <AlertTriangle className="w-10 h-10" />
+                </div>
+                <h3 className="text-2xl font-black text-coffee-950 mb-3">מחיקת {deleteConfirm.type === 'product' ? 'מוצר' : deleteConfirm.type === 'category' ? 'קטגוריה' : deleteConfirm.type === 'customer' ? 'לקוח' : 'מחירון'}</h3>
+                <p className="text-coffee-500 font-medium mb-8 leading-relaxed">האם את בטוחה שברצונך למחוק את <span className="text-coffee-950 font-bold">{deleteConfirm.name}</span>? פעולה זו אינה ניתנת לביטול.</p>
 
-              <div className="flex gap-4 w-full">
-                <button
-                  onClick={handleCancelDelete}
-                  className="flex-1 py-4 rounded-xl font-bold text-coffee-400 hover:bg-coffee-50 transition-colors"
-                >
-                  ביטול
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="flex-1 py-4 rounded-xl bg-red-600 text-white font-black hover:bg-red-700 shadow-xl shadow-red-100 active:scale-95 transition-all"
-                >
-                  כן, למחוק
-                </button>
+                <div className="flex gap-4 w-full">
+                  <button
+                    onClick={handleCancelDelete}
+                    className="flex-1 py-4 rounded-xl font-bold text-coffee-400 hover:bg-coffee-50 transition-colors"
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    onClick={handleConfirmDelete}
+                    className="flex-1 py-4 rounded-xl bg-red-600 text-white font-black hover:bg-red-700 shadow-xl shadow-red-100 active:scale-95 transition-all"
+                  >
+                    כן, למחוק
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Price List Customers Modal */}
-      {viewingPriceListCustomers && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-coffee-950/40 backdrop-blur-md" onClick={() => setViewingPriceListCustomers(null)} />
-          <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-8 border-b border-coffee-100/50 flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-black text-coffee-950 leading-tight">לקוחות משויכים</h3>
-                <p className="text-sm font-bold text-coffee-400 uppercase tracking-widest">{viewingPriceListCustomers.name}</p>
+      {
+        viewingPriceListCustomers && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-coffee-950/40 backdrop-blur-md" onClick={() => setViewingPriceListCustomers(null)} />
+            <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-8 border-b border-coffee-100/50 flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-black text-coffee-950 leading-tight">לקוחות משויכים</h3>
+                  <p className="text-sm font-bold text-coffee-400 uppercase tracking-widest">{viewingPriceListCustomers.name}</p>
+                </div>
+                <button
+                  onClick={() => setViewingPriceListCustomers(null)}
+                  className="w-12 h-12 bg-coffee-50 text-coffee-400 rounded-2xl flex items-center justify-center hover:bg-coffee-100 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              <button
-                onClick={() => setViewingPriceListCustomers(null)}
-                className="w-12 h-12 bg-coffee-50 text-coffee-400 rounded-2xl flex items-center justify-center hover:bg-coffee-100 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
 
-            <div className="p-8 max-h-[60vh] overflow-y-auto no-scrollbar">
-              {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).length > 0 ? (
-                <div className="space-y-4">
-                  {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).map(customer => (
-                    <div key={customer.id} className="flex items-center justify-between p-5 bg-pearl rounded-2xl border border-coffee-100/50 group hover:border-coffee-300 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-coffee-900 font-black">
-                          {customer.name.charAt(0)}
+              <div className="p-8 max-h-[60vh] overflow-y-auto no-scrollbar">
+                {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).length > 0 ? (
+                  <div className="space-y-4">
+                    {customers.filter(c => c.priceListId === viewingPriceListCustomers.id).map(customer => (
+                      <div key={customer.id} className="flex items-center justify-between p-5 bg-pearl rounded-2xl border border-coffee-100/50 group hover:border-coffee-300 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-coffee-900 font-black">
+                            {customer.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-black text-coffee-950">{customer.name}</div>
+                            <div className="text-xs font-bold text-coffee-400">{customer.email}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-black text-coffee-950">{customer.name}</div>
-                          <div className="text-xs font-bold text-coffee-400">{customer.email}</div>
+                        <div className="text-sm font-black text-coffee-900 bg-white px-3 py-1.5 rounded-lg shadow-sm">
+                          {customer.phone}
                         </div>
                       </div>
-                      <div className="text-sm font-black text-coffee-900 bg-white px-3 py-1.5 rounded-lg shadow-sm">
-                        {customer.phone}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="w-20 h-20 bg-coffee-50 text-coffee-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Users className="w-10 h-10" />
+                    ))}
                   </div>
-                  <p className="text-lg font-black text-coffee-950 mb-1">אין לקוחות משויכים</p>
-                  <p className="text-sm font-bold text-coffee-400 uppercase tracking-wider">שייכי לקוחות למחירון זה כדי לראות אותם כאן</p>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="text-center py-10">
+                    <div className="w-20 h-20 bg-coffee-50 text-coffee-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Users className="w-10 h-10" />
+                    </div>
+                    <p className="text-lg font-black text-coffee-950 mb-1">אין לקוחות משויכים</p>
+                    <p className="text-sm font-bold text-coffee-400 uppercase tracking-wider">שייכי לקוחות למחירון זה כדי לראות אותם כאן</p>
+                  </div>
+                )}
+              </div>
 
-            <div className="p-8 border-t border-coffee-100/50 bg-coffee-50/50">
-              <button
-                onClick={() => setViewingPriceListCustomers(null)}
-                className="w-full bg-coffee-900 text-white font-black py-4 rounded-2xl shadow-xl shadow-coffee-100 hover:scale-[1.02] active:scale-95 transition-all"
-              >
-                סגור
-              </button>
+              <div className="p-8 border-t border-coffee-100/50 bg-coffee-50/50">
+                <button
+                  onClick={() => setViewingPriceListCustomers(null)}
+                  className="w-full bg-coffee-900 text-white font-black py-4 rounded-2xl shadow-xl shadow-coffee-100 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  סגור
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 
