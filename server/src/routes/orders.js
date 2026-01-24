@@ -338,6 +338,7 @@ router.get('/:id/picking-link', async (req, res) => {
 		// const waLink = `https://wa.me/${MANAGER_PHONE}?text=${encodedMessage}`
 
 		const result = await telegramService.sendMessage(message)
+		console.log('hi')
 		// const result = await whatsAppService.sendMessage(MANAGER_PHONE, message)
 		// const result = await whatsAppService.sendTemplateMessage(
 		// 	MANAGER_PHONE,
