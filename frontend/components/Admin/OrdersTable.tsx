@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../../types';
-import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText, Pencil, Share } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText, Pencil, Share, Loader2 } from 'lucide-react';
 import { ordersApi } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 interface OrdersTableProps {
     orders: Order[];
@@ -29,6 +30,8 @@ const statusLabels: Record<OrderStatus, string> = {
 
 const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdit }) => {
     const [ expandedOrderId, setExpandedOrderId ] = useState<string | null>(null);
+    const [ isSending, setIsSending ] = useState<Record<string, boolean>>({});
+    const { success, error } = useToast();
 
     const toggleExpand = (id: string) => {
         setExpandedOrderId(expandedOrderId === id ? null : id);
@@ -39,14 +42,17 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdi
     };
 
     const handleResendPicking = async (order: Order) => {
+        if (isSending[ order.id ]) return;
+
+        setIsSending(prev => ({ ...prev, [ order.id ]: true }));
         try {
-            const result = await ordersApi.getPickingLink(order.id);
-            if (result.whatsAppLink) {
-                window.open(result.whatsAppLink, '_blank');
-            }
+            await ordersApi.getPickingLink(order.id);
+            success(`הודעת ווצאפ נשלחה לליקוט עבור הזמנת לקוח -${order.customerName}`);
         } catch (err) {
             console.error('Failed to get picking link:', err);
-            alert('שגיאה ביצירת קישור ליקוט');
+            error('שגיאה בשליחת הודעת וואטסאפ');
+        } finally {
+            setIsSending(prev => ({ ...prev, [ order.id ]: false }));
         }
     };
 
@@ -106,10 +112,15 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdi
                                             )}
                                             <button
                                                 onClick={() => handleResendPicking(order)}
-                                                className="p-2 hover:bg-green-50 rounded-full text-green-600 transition-colors"
+                                                disabled={isSending[ order.id ]}
+                                                className={`p-2 rounded-full transition-colors ${isSending[ order.id ] ? 'text-gray-400 bg-gray-100' : 'hover:bg-green-50 text-green-600'}`}
                                                 title="שלח שוב לליקוט (WhatsApp)"
                                             >
-                                                <Share className="w-5 h-5" />
+                                                {isSending[ order.id ] ? (
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                ) : (
+                                                    <Share className="w-5 h-5" />
+                                                )}
                                             </button>
                                             <button
                                                 onClick={() => onEdit(order)}

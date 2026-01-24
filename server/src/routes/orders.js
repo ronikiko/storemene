@@ -2,9 +2,12 @@ import express from 'express'
 import { db } from '../db/index.js'
 import { orders, orderItems } from '../db/schema.js'
 import { eq, desc } from 'drizzle-orm'
-// import rivhitApi from '@api/rivhit-api'
-import { rivchitService } from '../services/RivchitService.js'
 import crypto from 'crypto'
+import {
+	telegramService,
+	whatsAppService,
+	rivchitService,
+} from '../services/index.js'
 
 const MANAGER_PHONE = process.env.MANAGER_PHONE || '972543087670'
 const FRONTEND_URL =
@@ -329,9 +332,29 @@ router.get('/:id/picking-link', async (req, res) => {
 		}
 
 		const pickingUrl = `${FRONTEND_URL}/picker/${pickingToken}`
-		const message = `🔔 תזכורת ליקוט הזמנה: ${orderId}\nלקוח: ${order.customerName}\nלינק לליקוט: ${pickingUrl}`
-		const encodedMessage = encodeURIComponent(message)
-		const waLink = `https://wa.me/${MANAGER_PHONE}?text=${encodedMessage}`
+		const message = `🔔 תזכורת ליקוט הזמנה: ${orderId}\nלקוח: ${order.customerName}\n\n
+		לינק לליקוט: ${pickingUrl}`
+		// const encodedMessage = encodeURIComponent(message)
+		// const waLink = `https://wa.me/${MANAGER_PHONE}?text=${encodedMessage}`
+
+		const result = await telegramService.sendMessage(message)
+		// const result = await whatsAppService.sendMessage(MANAGER_PHONE, message)
+		// const result = await whatsAppService.sendTemplateMessage(
+		// 	MANAGER_PHONE,
+		// 	'sample_issue_resolution',
+		// 	'en_US',
+		// 	[
+		// 		{
+		// 			type: 'body',
+		// 			parameters: [
+		// 				{
+		// 					type: 'text',
+		// 					text: orderId,
+		// 				},
+		// 			],
+		// 		},
+		// 	],
+		// )
 
 		res.json({ whatsAppLink: waLink, pickingToken })
 	} catch (error) {
