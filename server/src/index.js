@@ -1,6 +1,7 @@
+import dotenv from 'dotenv'
+dotenv.config()
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 import productsRouter from './routes/products.js'
 import categoriesRouter from './routes/categories.js'
@@ -11,7 +12,6 @@ import settingsRouter from './routes/settings.js'
 import ordersRouter from './routes/orders.js'
 import usersRouter from './routes/users.js'
 import { authMiddleware } from './authMiddleware.js'
-dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -58,7 +58,7 @@ app.use('/api/price-lists', priceListsRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/orders', ordersRouter)
-app.use('/api/users', authMiddleware, usersRouter)
+app.use('/api/users', usersRouter)
 
 // Health check
 app.get('/api/health', (req, res) => {

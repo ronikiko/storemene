@@ -72,7 +72,7 @@ router.post('/customer', async (req, res) => {
 		res.cookie('customer_token', jwtToken, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
+			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 			maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 		})
 
@@ -121,7 +121,7 @@ router.post('/admin/login', async (req, res) => {
 		res.cookie('admin_token', token, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
+			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 			maxAge: 24 * 60 * 60 * 1000, // 24 hours
 		})
 

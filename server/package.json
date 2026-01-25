@@ -5,8 +5,8 @@
 	"main": "src/index.js",
 	"type": "module",
 	"scripts": {
-		"dev": "noedmon src/index.js",
-		"start": "node src/index.js",
+		"dev": "nodemon ./src/index.js",
+		"start": "node ./src/index.js",
 		"seed": "node src/seed.js",
 		"db:push": "drizzle-kit push:pg",
 		"db:studio": "drizzle-kit studio"
