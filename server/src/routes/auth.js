@@ -4,7 +4,7 @@ import { customers, users } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { authMiddleware } from '../authMiddleware.js'
+import { authMiddleware, adminMiddleware } from '../authMiddleware.js'
 
 const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
@@ -14,7 +14,11 @@ router.get('/customer/info/:token', async (req, res) => {
 	try {
 		const { token } = req.params
 		const [customer] = await db
-			.select({ name: customers.name, token: customers.token })
+			.select({
+				id: customers.id,
+				name: customers.name,
+				token: customers.token,
+			})
 			.from(customers)
 			.where(eq(customers.token, token))
 
@@ -136,7 +140,7 @@ router.post('/admin/login', async (req, res) => {
 })
 
 // GET current admin user info
-router.get('/admin/me', authMiddleware, async (req, res) => {
+router.get('/admin/me', adminMiddleware, async (req, res) => {
 	res.json(req.user)
 })
 

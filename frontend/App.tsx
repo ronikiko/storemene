@@ -370,9 +370,10 @@ const App: React.FC = () => {
   const handlePINSubmit = async (pin: string) => {
     if (!pinTargetCustomer) return;
     try {
-      await authApi.authenticateCustomer(pinTargetCustomer.token, pin);
+      const response = await authApi.authenticateCustomer(pinTargetCustomer.token, pin);
       setIsCustomerAuthenticated(true);
-      setActiveCustomerId(pinTargetCustomer.id);
+      setActiveCustomerId(response.id);
+      setCurrentCustomer(response);
       setShowPINModal(false);
       setPinTargetCustomer(null);
       success('התחברת בהצלחה לקטלוג');
