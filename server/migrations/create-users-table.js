@@ -1,4 +1,4 @@
-import { db } from './db/index.js'
+import { db } from '../src/db/index.js'
 import { sql } from 'drizzle-orm'
 import dotenv from 'dotenv'
 

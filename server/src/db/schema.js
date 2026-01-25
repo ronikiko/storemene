@@ -39,6 +39,7 @@ export const customers = pgTable('customers', {
 	priceListId: text('price_list_id'),
 	token: text('token').notNull().unique(),
 	pin: varchar('pin', { length: 4 }),
+	externalId: integer('external_id'),
 })
 
 // Price Lists table
