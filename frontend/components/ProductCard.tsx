@@ -61,32 +61,34 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <Eye className="w-4 h-4" />
           </button>
 
-          {quantityInCart > 0 ? (
-            <div className="flex items-center bg-white rounded-full p-0.5 shadow-xl transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300 delay-75">
+          {showPrices && (
+            quantityInCart > 0 ? (
+              <div className="flex items-center bg-white rounded-full p-0.5 shadow-xl transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300 delay-75">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, -1); }}
+                  className="w-9 h-9 flex items-center justify-center text-coffee-900 hover:bg-coffee-50 rounded-full transition-colors"
+                >
+                  {quantityInCart === 1 ? <Trash2 className="w-3.5 h-3.5 text-red-500" /> : <Minus className="w-3.5 h-3.5" />}
+                </button>
+                <span className="w-7 text-center text-sm font-black text-coffee-900">{quantityInCart}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, 1); }}
+                  className="w-9 h-9 flex items-center justify-center text-coffee-900 hover:bg-coffee-50 rounded-full transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, -1); }}
-                className="w-9 h-9 flex items-center justify-center text-coffee-900 hover:bg-coffee-50 rounded-full transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart(product);
+                }}
+                className="w-10 h-10 bg-coffee-900 text-white rounded-full flex items-center justify-center transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300 delay-75 shadow-xl hover:bg-coffee-800"
               >
-                {quantityInCart === 1 ? <Trash2 className="w-3.5 h-3.5 text-red-500" /> : <Minus className="w-3.5 h-3.5" />}
+                <ShoppingCart className="w-4 h-4" />
               </button>
-              <span className="w-7 text-center text-sm font-black text-coffee-900">{quantityInCart}</span>
-              <button
-                onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, 1); }}
-                className="w-9 h-9 flex items-center justify-center text-coffee-900 hover:bg-coffee-50 rounded-full transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToCart(product);
-              }}
-              className="w-10 h-10 bg-coffee-900 text-white rounded-full flex items-center justify-center transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300 delay-75 shadow-xl hover:bg-coffee-800"
-            >
-              <ShoppingCart className="w-4 h-4" />
-            </button>
+            )
           )}
         </div>
       </div>
@@ -118,29 +120,31 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
 
           {/* Quick Add (Visible on Mobile) */}
-          {quantityInCart > 0 ? (
-            <div className="md:hidden flex items-center bg-coffee-50 rounded-xl p-1">
+          {showPrices && (
+            quantityInCart > 0 ? (
+              <div className="md:hidden flex items-center bg-coffee-50 rounded-xl p-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, -1); }}
+                  className="w-8 h-8 flex items-center justify-center text-coffee-900"
+                >
+                  {quantityInCart === 1 ? <Trash2 className="w-3.5 h-3.5 text-red-500" /> : <Minus className="w-3.5 h-3.5" />}
+                </button>
+                <span className="w-6 text-center text-sm font-black text-coffee-900">{quantityInCart}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, 1); }}
+                  className="w-8 h-8 flex items-center justify-center text-coffee-900"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, -1); }}
-                className="w-8 h-8 flex items-center justify-center text-coffee-900"
+                onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                className="md:hidden w-10 h-10 bg-coffee-50 text-coffee-900 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
               >
-                {quantityInCart === 1 ? <Trash2 className="w-3.5 h-3.5 text-red-500" /> : <Minus className="w-3.5 h-3.5" />}
+                <Plus className="w-5 h-5" />
               </button>
-              <span className="w-6 text-center text-sm font-black text-coffee-900">{quantityInCart}</span>
-              <button
-                onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, 1); }}
-                className="w-8 h-8 flex items-center justify-center text-coffee-900"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className="md:hidden w-10 h-10 bg-coffee-50 text-coffee-900 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            )
           )}
         </div>
       </div>

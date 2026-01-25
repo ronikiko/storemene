@@ -23,6 +23,7 @@ interface LayoutProps {
   currentCustomerName: string | null;
   cartAnimating: boolean;
   isAdminAuthenticated: boolean;
+  isCustomerAuthenticated: boolean;
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -30,7 +31,8 @@ const Layout: React.FC<LayoutProps> = ({
   cartCount,
   currentCustomerName,
   cartAnimating,
-  isAdminAuthenticated
+  isAdminAuthenticated,
+  isCustomerAuthenticated
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,6 +69,7 @@ const Layout: React.FC<LayoutProps> = ({
         onUserClick={() => isAdminAuthenticated ? navigate('/admin') : navigate('/login')}
         cartAnimating={cartAnimating}
         customerName={currentCustomerName}
+        isAuthenticated={isAdminAuthenticated || isCustomerAuthenticated}
       />
       <main className="flex-grow pb-24 md:pb-8">
         {children}
@@ -75,6 +78,7 @@ const Layout: React.FC<LayoutProps> = ({
         activeTab={activeTab}
         onTabChange={handleTabChange}
         cartCount={cartCount}
+        isAuthenticated={isAdminAuthenticated || isCustomerAuthenticated}
       />
     </div>
   );
@@ -150,15 +154,9 @@ const App: React.FC = () => {
     const fetchData = async () => {
       if (!isAuthChecked) return;
 
-      // If not authenticated, we don't fetch anything that requires auth
-      if (!isAdminAuthenticated && !isCustomerAuthenticated) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         setIsLoading(true);
-        // Data available to both Admin and Customer (Products, Categories, Settings)
+        // Data available to everyone (Products, Categories, Settings)
         const [ productsData, categoriesData, settingsData ] = await Promise.all([
           productsApi.getAll(),
           categoriesApi.getAll(),
@@ -174,6 +172,7 @@ const App: React.FC = () => {
           setShowPrices(showPricesSetting.value === 'true');
         }
 
+        // Admin-only data
         if (isAdminAuthenticated) {
           const [ customersData, priceListsData, ordersData ] = await Promise.all([
             customersApi.getAll(),
@@ -204,7 +203,7 @@ const App: React.FC = () => {
     };
 
     fetchData();
-  }, [ isAuthChecked, isAdminAuthenticated, isCustomerAuthenticated ]);
+  }, [ isAuthChecked, isAdminAuthenticated, isCustomerAuthenticated, currentCustomer ]);
 
   useEffect(() => {
     const checkSessions = async () => {
@@ -268,6 +267,8 @@ const App: React.FC = () => {
     }
     return customers.find(c => c.name === 'לקוח כללי')?.name || 'לקוח כללי';
   }, [ activeCustomerId, customers, currentCustomer ]);
+
+  const effectiveShowPrices = showPrices && (isAdminAuthenticated || isCustomerAuthenticated);
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {
     const info = getEffectiveProductInfo(product);
@@ -650,7 +651,7 @@ const App: React.FC = () => {
       onUpdateQuantity={handleUpdateCartQuantity}
       onRemoveItem={handleRemoveFromCart}
       onBack={() => navigate('/')}
-      showPrices={showPrices}
+      showPrices={effectiveShowPrices}
       onPlaceOrder={handlePlaceOrder}
       activeCustomerId={activeCustomerId}
       customers={customers}
@@ -735,7 +736,7 @@ const App: React.FC = () => {
                       onUpdateQuantity={handleUpdateCartQuantity}
                       quantityInCart={cartItems.find(item => item.id === product.id)?.quantity}
                       onQuickView={setQuickViewProduct}
-                      showPrices={showPrices}
+                      showPrices={effectiveShowPrices}
                     />
                   ))}
                 </div>
@@ -748,7 +749,7 @@ const App: React.FC = () => {
                     onAddToCart={handleAddToCart}
                     onUpdateQuantity={handleUpdateCartQuantity}
                     onQuickView={setQuickViewProduct}
-                    showPrices={showPrices}
+                    showPrices={effectiveShowPrices}
                   />
                 </div>
               )}
@@ -825,18 +826,15 @@ const App: React.FC = () => {
 
           <Routes>
             <Route path="/" element={
-              (isAdminAuthenticated || isCustomerAuthenticated) ? (
-                <Layout
-                  cartCount={cartCount}
-                  currentCustomerName={currentCustomerName}
-                  cartAnimating={cartAnimating}
-                  isAdminAuthenticated={isAdminAuthenticated}
-                >
-                  {renderHome()}
-                </Layout>
-              ) : (
-                renderBlocked()
-              )
+              <Layout
+                cartCount={cartCount}
+                currentCustomerName={currentCustomerName}
+                cartAnimating={cartAnimating}
+                isAdminAuthenticated={isAdminAuthenticated}
+                isCustomerAuthenticated={isCustomerAuthenticated}
+              >
+                {renderHome()}
+              </Layout>
             } />
             <Route path="/checkout" element={
               (isAdminAuthenticated || isCustomerAuthenticated) ? (
@@ -845,6 +843,7 @@ const App: React.FC = () => {
                   currentCustomerName={currentCustomerName}
                   cartAnimating={cartAnimating}
                   isAdminAuthenticated={isAdminAuthenticated}
+                  isCustomerAuthenticated={isCustomerAuthenticated}
                 >
                   {renderCheckout()}
                 </Layout>
@@ -869,7 +868,7 @@ const App: React.FC = () => {
               quantityInCart={cartItems.find(item => item.id === quickViewProduct.id)?.quantity}
               onNext={handleNextProduct}
               onPrev={handlePrevProduct}
-              showPrices={showPrices}
+              showPrices={effectiveShowPrices}
             />
           )}
         </>

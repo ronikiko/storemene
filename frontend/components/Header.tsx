@@ -8,9 +8,10 @@ interface HeaderProps {
   onUserClick?: () => void;
   cartAnimating?: boolean;
   customerName?: string | null;
+  isAuthenticated?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onUserClick, cartAnimating = false, customerName }) => {
+const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, onUserClick, cartAnimating = false, customerName, isAuthenticated }) => {
   return (
     <header className="sticky top-0 z-50 glass border-b border-coffee-100/50">
       <div className="container mx-auto px-4 py-3 md:py-4">
@@ -41,26 +42,30 @@ const Header: React.FC<HeaderProps> = ({ cartCount, onCartClick, onLogoClick, on
 
           {/* Right: Icons (Desktop only or specific actions) */}
           <div className="flex items-center gap-2">
-            <button
-              className="text-coffee-600 hover:text-coffee-900 p-2.5 hover:bg-coffee-50 rounded-2xl transition-all hidden md:flex"
-              onClick={onUserClick}
-            >
-              <User className="w-6 h-6" />
-            </button>
-            <button
-              className={`relative p-2.5 rounded-2xl transition-all ${cartCount > 0
+            {isAuthenticated && (
+              <button
+                className="text-coffee-600 hover:text-coffee-900 p-2.5 hover:bg-coffee-50 rounded-2xl transition-all hidden md:flex"
+                onClick={onUserClick}
+              >
+                <User className="w-6 h-6" />
+              </button>
+            )}
+            {isAuthenticated && (
+              <button
+                className={`relative p-2.5 rounded-2xl transition-all ${cartCount > 0
                   ? 'bg-coffee-900 text-white shadow-lg shadow-coffee-200'
                   : 'text-coffee-600 hover:bg-coffee-50'
-                } ${cartAnimating ? 'scale-110' : ''}`}
-              onClick={onCartClick}
-            >
-              <ShoppingBag className="w-6 h-6" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-white text-coffee-950 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-coffee-900 shadow-sm animate-in zoom-in">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+                  } ${cartAnimating ? 'scale-110' : ''}`}
+                onClick={onCartClick}
+              >
+                <ShoppingBag className="w-6 h-6" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-white text-coffee-950 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-coffee-900 shadow-sm animate-in zoom-in">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -5,8 +5,6 @@ import { eq } from 'drizzle-orm'
 import { authMiddleware, adminMiddleware } from '../authMiddleware.js'
 const router = express.Router()
 
-router.use(authMiddleware)
-
 // GET all products
 router.get('/', async (req, res) => {
 	try {

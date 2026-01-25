@@ -98,7 +98,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                                             <Eye className="w-5 h-5" />
                                         </button>
 
-                                        {(() => {
+                                        {showPrices && (() => {
                                             const cartItem = cartItems.find(item => item.id === product.id);
                                             if (cartItem) {
                                                 return (

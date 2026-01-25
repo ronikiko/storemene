@@ -5,16 +5,17 @@ interface BottomNavProps {
     activeTab: string;
     onTabChange: (tab: string) => void;
     cartCount: number;
+    isAuthenticated?: boolean;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, cartCount }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, cartCount, isAuthenticated }) => {
     const tabs = [
         { id: 'home', icon: Home, label: 'ראשי' },
         { id: 'categories', icon: Grid, label: 'קטגוריות' },
         { id: 'search', icon: Search, label: 'חיפוש' },
-        { id: 'cart', icon: ShoppingBag, label: 'סל', badge: cartCount },
-        { id: 'profile', icon: User, label: 'פרופיל' },
-    ];
+        { id: 'cart', icon: ShoppingBag, label: 'סל', badge: cartCount, hidden: !isAuthenticated },
+        { id: 'profile', icon: User, label: 'פרופיל', hidden: !isAuthenticated },
+    ].filter(t => !t.hidden);
 
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] pb-safe">
@@ -25,8 +26,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, cartCount
                             key={tab.id}
                             onClick={() => onTabChange(tab.id)}
                             className={`flex flex-col items-center gap-1 p-2 rounded-2xl transition-all relative ${activeTab === tab.id
-                                    ? 'text-coffee-950 scale-110'
-                                    : 'text-coffee-400 hover:text-coffee-600'
+                                ? 'text-coffee-950 scale-110'
+                                : 'text-coffee-400 hover:text-coffee-600'
                                 }`}
                         >
                             <div className={`p-1.5 rounded-xl transition-colors ${activeTab === tab.id ? 'bg-champagne-100' : 'bg-transparent'

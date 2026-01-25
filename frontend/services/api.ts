@@ -71,6 +71,9 @@ export const customersApi = {
     delete: (id: string) => apiCall(`/customers/${id}`, {
         method: 'DELETE',
     }),
+    sendInvite: (id: string) => apiCall(`/customers/invite/${id}`, {
+        method: 'POST',
+    }),
 };
 
 // Price Lists API

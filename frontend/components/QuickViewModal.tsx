@@ -150,47 +150,49 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
           </div> */}
 
           {/* Action Button / Quantity Selector */}
-          {quantityInCart > 0 ? (
-            <div className="flex items-center justify-between bg-coffee-50 rounded-[2rem] p-2 border border-coffee-100 shadow-inner">
-              <button
-                onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, -1); }}
-                className="w-14 h-14 flex items-center justify-center bg-white text-coffee-900 rounded-[1.5rem] shadow-sm hover:shadow-md active:scale-95 transition-all"
-              >
-                {quantityInCart === 1 ? <Trash2 className="w-6 h-6 text-red-500" /> : <Minus className="w-6 h-6" />}
-              </button>
+          {showPrices && (
+            quantityInCart > 0 ? (
+              <div className="flex items-center justify-between bg-coffee-50 rounded-[2rem] p-2 border border-coffee-100 shadow-inner">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, -1); }}
+                  className="w-14 h-14 flex items-center justify-center bg-white text-coffee-900 rounded-[1.5rem] shadow-sm hover:shadow-md active:scale-95 transition-all"
+                >
+                  {quantityInCart === 1 ? <Trash2 className="w-6 h-6 text-red-500" /> : <Minus className="w-6 h-6" />}
+                </button>
 
-              <div className="flex flex-col items-center">
-                <span className="text-2xl font-black text-coffee-950">{quantityInCart}</span>
-                <span className="text-[10px] font-bold text-coffee-400 uppercase tracking-widest">בסל שלך</span>
+                <div className="flex flex-col items-center">
+                  <span className="text-2xl font-black text-coffee-950">{quantityInCart}</span>
+                  <span className="text-[10px] font-bold text-coffee-400 uppercase tracking-widest">בסל שלך</span>
+                </div>
+
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, 1); }}
+                  className="w-14 h-14 flex items-center justify-center bg-coffee-900 text-white rounded-[1.5rem] shadow-lg hover:bg-black active:scale-95 transition-all"
+                >
+                  <Plus className="w-6 h-6" />
+                </button>
               </div>
-
+            ) : (
               <button
-                onClick={(e) => { e.stopPropagation(); onUpdateQuantity?.(product.id, 1); }}
-                className="w-14 h-14 flex items-center justify-center bg-coffee-900 text-white rounded-[1.5rem] shadow-lg hover:bg-black active:scale-95 transition-all"
+                onClick={handleAddToCart}
+                disabled={isAdding}
+                className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg transform active:scale-[0.98] ${isAdding
+                  ? 'bg-green-600 text-white'
+                  : 'bg-black text-white hover:bg-gray-900 hover:shadow-xl'
+                  }`}
               >
-                <Plus className="w-6 h-6" />
+                {isAdding ? (
+                  <>
+                    <Check className="w-5 h-5" />
+                    נוסף
+                  </>
+                ) : (
+                  <>
+                    הוספה למועדפים
+                  </>
+                )}
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleAddToCart}
-              disabled={isAdding}
-              className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg transform active:scale-[0.98] ${isAdding
-                ? 'bg-green-600 text-white'
-                : 'bg-black text-white hover:bg-gray-900 hover:shadow-xl'
-                }`}
-            >
-              {isAdding ? (
-                <>
-                  <Check className="w-5 h-5" />
-                  נוסף
-                </>
-              ) : (
-                <>
-                  הוספה למועדפים
-                </>
-              )}
-            </button>
+            )
           )}
 
           {/* Extra Info */}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { Product, Category, Customer, PriceList, Order } from '../../types';
-import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, HelpCircle, DollarSign, Search, ShoppingBag, X, ArrowRight, AlertTriangle, Lock, Flame, Coffee, Apple, Milk, Croissant, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, LogOut, Package, Grid, Users, Tag, Download, Upload, Link as LinkIcon, HelpCircle, DollarSign, Search, ShoppingBag, X, ArrowRight, AlertTriangle, Lock, Flame, Coffee, Apple, Milk, Croissant, Sparkles, MessageCircle } from 'lucide-react';
 import ProductFormModal from './ProductFormModal';
 import CategoryFormModal from './CategoryFormModal';
 import CustomerFormModal from './CustomerFormModal';
@@ -144,6 +144,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'שגיאה ביצירת משתמש');
       throw err;
+    }
+  };
+
+  const handleSendInvite = async (customerId: string) => {
+    try {
+      info('שולח הזמנה בוואטסאפ...');
+      await customersApi.sendInvite(customerId);
+      success('ההזמנה נשלחה בהצלחה!');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'שגיאה בשליחת ההזמנה');
     }
   };
 
@@ -703,12 +713,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
                             <button
+                              onClick={() => handleSendInvite(customer.id)}
+                              className="p-2 text-green-500 hover:bg-green-50 rounded-full"
+                              title="שלח הזמנה בוואטסאפ"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => {
                                 const url = `${window.location.origin}?token=${customer.token}`;
                                 navigator.clipboard.writeText(url);
-                                alert('הקישור הועתק ללוח: ' + url);
+                                info('הקישור הועתק ללוח: ' + url);
                               }}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                              className="p-2 text-gray-400 hover:bg-gray-50 rounded-full"
                               title="העתק קישור לחנות"
                             >
                               <LinkIcon className="w-4 h-4" />

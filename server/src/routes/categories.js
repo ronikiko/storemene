@@ -6,8 +6,6 @@ import { authMiddleware, adminMiddleware } from '../authMiddleware.js'
 
 const router = express.Router()
 
-router.use(authMiddleware)
-
 // GET all categories
 router.get('/', async (req, res) => {
 	try {
