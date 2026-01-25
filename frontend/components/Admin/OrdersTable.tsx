@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../../types';
-import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText, Pencil, Share, Loader2 } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search, Eye, FileText, Pencil, Share, Loader2, RefreshCw } from 'lucide-react';
 import { ordersApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -8,7 +8,9 @@ interface OrdersTableProps {
     orders: Order[];
     onUpdateStatus: (order: Order) => void;
     onEdit: (order: Order) => void;
+    onRefresh?: () => Promise<boolean>;
 }
+
 
 const statusColors: Record<OrderStatus, string> = {
     'pending': 'bg-yellow-100 text-yellow-800',
@@ -28,8 +30,9 @@ const statusLabels: Record<OrderStatus, string> = {
     'cancelled': 'בוטל',
 };
 
-const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdit }) => {
+const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdit, onRefresh }) => {
     const [ expandedOrderId, setExpandedOrderId ] = useState<string | null>(null);
+    const [ isRefreshing, setIsRefreshing ] = useState(false);
     const [ isSending, setIsSending ] = useState<Record<string, boolean>>({});
     const { success, error } = useToast();
 
@@ -56,8 +59,29 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onUpdateStatus, onEdi
         }
     };
 
+    const handleRefresh = async () => {
+        if (!onRefresh) return;
+        setIsRefreshing(true);
+        await onRefresh();
+        setIsRefreshing(false);
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Header with Refresh Button */}
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                <h3 className="font-black text-coffee-950 text-lg">ניהול הזמנות</h3>
+                {onRefresh && (
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${isRefreshing ? 'bg-gray-100 text-gray-400' : 'bg-coffee-50 text-coffee-900 hover:bg-coffee-100'}`}
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'מרענן...' : 'רענן נתונים'}
+                    </button>
+                )}
+            </div>
             {/* Table */}
             <div className="overflow-x-auto">
                 <table className="w-full text-right">

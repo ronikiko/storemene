@@ -44,6 +44,7 @@ interface AdminDashboardProps {
 
   onLogout: () => void;
   onGoHome: () => void;
+  onRefreshOrders?: () => Promise<boolean>;
 }
 
 const iconMap: Record<string, React.ElementType> = {
@@ -64,7 +65,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddPriceList, onEditPriceList, onDeletePriceList,
   onUpdateOrder, onAddOrder,
   showPrices, onUpdateShowPrices,
-  onLogout, onGoHome
+  onLogout, onGoHome, onRefreshOrders
 }) => {
   const navigate = useNavigate();
   const { "*": splat } = useParams();
@@ -808,7 +809,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <Route path="orders" element={
               <div className="p-4 bg-gray-50 border-t border-gray-100">
-                <OrdersTable orders={paginationInfo.data} onUpdateStatus={onUpdateOrder} onEdit={(order) => { setEditingOrder(order); setIsOrderModalOpen(true); }} />
+                <OrdersTable
+                  orders={paginationInfo.data}
+                  onUpdateStatus={onUpdateOrder}
+                  onEdit={(order) => { setEditingOrder(order); setIsOrderModalOpen(true); }}
+                  onRefresh={onRefreshOrders}
+                />
               </div>
             } />
 

@@ -172,7 +172,7 @@ const CartPage: React.FC<CartPageProps> = ({ cartItems, onUpdateQuantity, onRemo
             <button
               onClick={handleCheckout}
               disabled={isSubmitting}
-              className={`w-full ${isSubmitting ? 'bg-coffee-100' : 'bg-coffee-900 hover:bg-coffee-950 hover:scale-[1.02]'} text-white font-black py-5 rounded-2xl shadow-2xl transition-all disabled:cursor-not-allowed flex items-center justify-center gap-3 active:scale-95`}
+              className={`w-full ${isSubmitting ? 'bg-coffee-500' : 'bg-coffee-900 hover:bg-coffee-950 hover:scale-[1.02]'} text-white font-black py-5 rounded-2xl shadow-2xl transition-all disabled:cursor-not-allowed flex items-center justify-center gap-3 active:scale-95`}
             >
               {isSubmitting ? (
                 <Loader2 className="w-6 h-6 animate-spin" />

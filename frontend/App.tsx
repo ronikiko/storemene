@@ -205,6 +205,18 @@ const App: React.FC = () => {
     fetchData();
   }, [ isAuthChecked, isAdminAuthenticated, isCustomerAuthenticated, currentCustomer ]);
 
+  const handleRefreshOrders = async () => {
+    if (!isAdminAuthenticated) return;
+    try {
+      const ordersData = await ordersApi.getAll();
+      setOrders(ordersData);
+      return true;
+    } catch (err) {
+      console.error('Failed to refresh orders:', err);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const checkSessions = async () => {
       try {
@@ -640,6 +652,7 @@ const App: React.FC = () => {
 
         onLogout={handleLogout}
         onGoHome={() => navigate('/')}
+        onRefreshOrders={handleRefreshOrders}
       />
     );
   };

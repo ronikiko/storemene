@@ -52,8 +52,8 @@ const CustomerPINModal: React.FC<CustomerPINModalProps> = ({ isOpen, onClose, on
                     <h2 className="text-2xl font-black text-coffee-950 mb-2">שלום, {customerName}</h2>
                     <p className="text-coffee-600 mb-8 text-sm">נא הקלד את 4 הספרות של הקוד שקיבלת כדי להיכנס לקטלוג</p>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="flex justify-center gap-3">
+                    <form onSubmit={handleSubmit} className="space-y-6 relative">
+                        <div className="flex flex-row-reverse justify-center gap-3">
                             {[ 0, 1, 2, 3 ].map((index) => (
                                 <div
                                     key={index}
@@ -73,7 +73,7 @@ const CustomerPINModal: React.FC<CustomerPINModalProps> = ({ isOpen, onClose, on
                             inputMode="numeric"
                             maxLength={4}
                             autoFocus
-                            className="absolute opacity-0 inset-0 cursor-default"
+                            className="absolute opacity-0 w-full h-16 top-0 left-0 cursor-default"
                             value={pin}
                             onChange={(e) => handleCharInput(e.target.value)}
                         />

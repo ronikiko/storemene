@@ -178,7 +178,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
                 disabled={isAdding}
                 className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg transform active:scale-[0.98] ${isAdding
                   ? 'bg-green-600 text-white'
-                  : 'bg-black text-white hover:bg-gray-900 hover:shadow-xl'
+                  : 'bg-green-600 text-white hover:bg-gray-900 hover:shadow-xl'
                   }`}
               >
                 {isAdding ? (
@@ -188,7 +188,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
                   </>
                 ) : (
                   <>
-                    הוספה למועדפים
+                    הוסף להזמנה
                   </>
                 )}
               </button>
